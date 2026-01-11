@@ -1,4 +1,4 @@
-import 'event_post_model.dart';
+part of 'event_post_model.dart';
 
 enum EventSubtypeMM {
   debrisFlow,
@@ -12,6 +12,8 @@ enum EventSubtypeMM {
 }
 
 class EventMassMovement extends Event {
+  final EventSubtypeMM eventSubtype;
+
   double? volumeM3;              // Estimated volume
   double? velocityMetersPerSecond;
   double? runoutDistanceMeters;  // Horizontal travel distance
@@ -27,5 +29,8 @@ class EventMassMovement extends Event {
   // String material = ""; // rock, soil, ice, debris
   // String damageDescription = "";
 
-  EventMassMovement({required super.id});
+  EventMassMovement({
+    super.id,
+    required this.eventSubtype,
+    }) : super(eventType: EventType.massMovement_surfaceInstability);
 }

@@ -1,4 +1,4 @@
-import 'event_post_model.dart';
+part of 'event_post_model.dart';
 
 enum EventSubtypeSeismic {
   unspecified,
@@ -15,11 +15,16 @@ enum EventSubtypeSeismic {
 }
 
 class EventSeismic extends Event {
+  final EventSubtypeSeismic eventSubtype;
+
   double? magnitude;
   double? magnitudeType;
   double? depth;
   double? depthUncertainty;
   String focalMechanism = "";
 
-  EventSeismic({required String id}) : super(id: id);
+  EventSeismic({
+    super.id,
+    required this.eventSubtype,
+   }) : super(eventType: EventType.seismic_tectonic);
 }

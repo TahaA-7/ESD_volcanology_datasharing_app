@@ -1,4 +1,4 @@
-import 'event_post_model.dart';
+part of 'event_post_model.dart';
 
 enum EventSubtypeCryoseismic {
   glacierCalving,
@@ -10,10 +10,22 @@ enum EventSubtypeCryoseismic {
 
 class EventCryoseismic extends Event {
   // "Icequakes" or frost quakes
+  final EventSubtypeCryoseismic eventSubtype;
+
   double? iceThicknessMeters;
   double? airTemperatureCelsius;
   String glacierIceBodyName = "";
   double? crackLengthMeters;
 
-  EventCryoseismic({required super.id});
+  EventCryoseismic({
+    super.id, 
+    required this.eventSubtype,
+    }) : super(eventType: EventType.cryoseismic_glacial);
+  // EventCryoseismic({required super.id});
 }
+
+  // EventCryoseismic({
+  //   String? id, 
+  //   required this.eventSubtype,
+  //   }) : super(id: id, eventType: EventType.cryoseismic_glacial);
+  // // EventCryoseismic({required super.id});

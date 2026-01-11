@@ -1,7 +1,18 @@
+library event;
+
 // import 'package:littlefish_feature_models/shared/country';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:math';
+
+part 'anthropogenic_model.dart';
+part 'atmospheric_model.dart';
+part 'cryoseismic_model.dart';
+part 'geodetic_model.dart';
+part 'hydrothermal_model.dart';
+part 'mass_movement_model.dart';
+part 'seismic_model.dart';
+part 'volcanic_models.dart';
 
 enum EventType {  // default
   unspecified_anomalous,
@@ -13,8 +24,7 @@ enum EventType {  // default
   hydrothermal_fluidDriven,
   atmospheric_coupledSignals,
   anthropogenic,
-  geodetic,
-  deformation,
+  geodetic_deformation,
   multiSensor,
   false_test,
 }
@@ -98,10 +108,11 @@ enum EventPostStatus {
 
 var r = Random();
 const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890-';
-class Event{
+sealed class Event{
   final String id;
-  EventType eventType = EventType.unspecified_anomalous;
-  Object eventSubType = EventSubtype.unspecified;
+  final EventType eventType;
+  // EventType eventType = EventType.unspecified_anomalous;
+  // EventSubtype eventSubtype = EventSubtype.unspecified;
   
   Country country = Country.unspecified;
   String stateProvince = "";
@@ -118,7 +129,9 @@ class Event{
   String description = "";
 
   // Event({String? id}) : id = id ?? const Uuid().v4();
-  Event({String? id}) : id = id ?? _generateManualId();
+  Event({String? id, required this.eventType}) 
+    : id = id ?? _generateManualId();
+
   static String _generateManualId() {
     return String.fromCharCodes(
       Iterable.generate(36, (_) => _chars.codeUnitAt(r.nextInt(_chars.length)))
