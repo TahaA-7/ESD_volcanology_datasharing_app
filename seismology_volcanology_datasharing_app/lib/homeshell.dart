@@ -15,7 +15,7 @@ class HomeShell extends StatelessWidget {
         children: [
           const SizedBox(height: 16),
           const TopTabs(),
-          const FilterBar(), // 👈 shared across all pages
+          const FilterBar(), // shared across most pages
           Expanded(child: child),
         ],
       ),

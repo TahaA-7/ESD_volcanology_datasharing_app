@@ -38,6 +38,7 @@ class FilterBar extends StatelessWidget {
           _iconButton(Icons.info_outline, 'Tutorial'),
           _iconButton(Icons.bookmark_border, 'Bookmarks'),
           _iconButton(Icons.download_outlined, 'Export'),
+          _iconButton(Icons.post_add, 'Post'),
         ],
       ),
     );
