@@ -129,8 +129,22 @@ sealed class Event{
   String description = "";
 
   // Event({String? id}) : id = id ?? const Uuid().v4();
+  // Event({String? id, required this.eventType}) : id = id ?? //generate_ManualId();
   Event({String? id, required this.eventType}) 
-    : id = id ?? _generateManualId();
+    : id = id ?? _safeGenerateId();
+
+  static String _safeGenerateId() {
+    try {
+      return const Uuid().v7();
+    } catch (e) {
+      try {
+        return const Uuid().v4();
+      } catch (e) {
+        // Manual fallback
+        return _generateManualId();
+      }
+    }
+  }
 
   static String _generateManualId() {
     return String.fromCharCodes(
