@@ -4,8 +4,15 @@ import 'widgets/top_tabs.dart';
 
 class HomeShell extends StatelessWidget {
   final Widget child;
+  final HomeTab selectedTab;
+  final ValueChanged<HomeTab> onTabSelected;
 
-  const HomeShell({super.key, required this.child});
+  const HomeShell({
+    super.key,
+    required this.child,
+    required this.selectedTab,
+    required this.onTabSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,8 +21,11 @@ class HomeShell extends StatelessWidget {
       body: Column(
         children: [
           const SizedBox(height: 16),
-          const TopTabs(),
-          const FilterBar(), // shared across most pages
+          TopTabs(
+            selectedTab: selectedTab,
+            onTabSelected: onTabSelected,
+          ),
+          const FilterBar(),
           Expanded(child: child),
         ],
       ),

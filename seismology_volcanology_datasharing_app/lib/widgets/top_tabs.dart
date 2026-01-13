@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 
 enum HomeTab { timeline, map, eventList }
 
-class TopTabs extends StatefulWidget {
-  const TopTabs({super.key});
+class TopTabs extends StatelessWidget {
+  final HomeTab selectedTab;
+  final ValueChanged<HomeTab> onTabSelected;
 
-  @override
-  State<TopTabs> createState() => _TopTabsState();
-}
-
-class _TopTabsState extends State<TopTabs> {
-  HomeTab selectedTab = HomeTab.timeline;
+  const TopTabs({
+    super.key,
+    required this.selectedTab,
+    required this.onTabSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,6 @@ class _TopTabsState extends State<TopTabs> {
     );
   }
 
-  /// Tab button widget (your code, unchanged)
   Widget _tabButton({
     required String label,
     IconData? icon,
@@ -44,13 +43,7 @@ class _TopTabsState extends State<TopTabs> {
 
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedTab = tab;
-          });
-
-          // later: navigation logic goes here
-        },
+        onTap: () => onTabSelected(tab),
         child: Container(
           height: 56,
           decoration: BoxDecoration(
@@ -64,10 +57,7 @@ class _TopTabsState extends State<TopTabs> {
                 Icon(icon, color: Colors.black),
                 const SizedBox(width: 6),
               ],
-              Text(
-                label,
-                style: const TextStyle(fontSize: 18),
-              ),
+              Text(label, style: const TextStyle(fontSize: 18)),
             ],
           ),
         ),
