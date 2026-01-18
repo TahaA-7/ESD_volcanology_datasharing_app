@@ -10,6 +10,7 @@ import '../utils_services/stringformatter_validator.dart';
 
 import '../widgets/date_time_picker_field.dart';
 import '../widgets/dropdowns.dart';
+import '../widgets/buttons.dart';
 
 
 class EventPostWizardScreen extends StatefulWidget {
@@ -74,11 +75,11 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
               bottom: false,
               child: Row(
                 children: [
-                  _NavButton(icon: Icons.view_timeline, label: 'Timeline'),
+                  NavButton(icon: Icons.view_timeline, label: 'Timeline'),
                   const Spacer(),
-                  _NavButton(icon: Icons.map_outlined, label: 'Map'),
+                  NavButton(icon: Icons.map_outlined, label: 'Map'),
                   const Spacer(),
-                  _NavButton(icon: Icons.list, label: 'Event List'),
+                  NavButton(icon: Icons.list, label: 'Event List'),
                   const Spacer(),
                   // Back button (styled)
                   InkWell(
@@ -111,13 +112,13 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                _OutlineButton(
+                OutlineButton(
                   label: 'Draft',
                   icon: Icons.description_outlined,
                   onTap: () {},
                 ),
                 const SizedBox(width: 8),
-                _FilledButton(
+                FilledButton_(
                   label: 'Post',
                   icon: Icons.add,
                   onTap: _nothing,
@@ -286,75 +287,6 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
   }
 }
 
-class _NavButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _NavButton({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: () {},
-      icon: Icon(icon, color: Colors.black),
-      label: Text(
-        label,
-        style: const TextStyle(color: Colors.black, fontSize: 16),
-      ),
-    );
-  }
-}
-
-class _OutlineButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _OutlineButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: Colors.black),
-      label: Text(label, style: const TextStyle(color: Colors.black)),
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Colors.black),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-    );
-  }
-}
-
-class _FilledButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _FilledButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: Colors.white),
-      label: Text(label, style: const TextStyle(color: Colors.white)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-    );
-  }
-}
-
 class _BasicDetailsStep extends StatelessWidget {
   final EventType? eventType;
   final Enum? eventSubtype;
@@ -468,6 +400,11 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
         _selectedLocation.latitude.toStringAsFixed(6);
     
     _yearsController.text = widget.years ?? '';
+    _daysController.text = widget.days ?? '';
+    _hoursController.text = widget.hours ?? '';
+    _minutesController.text = widget.minutes ?? '';
+    _secondsController.text = widget.seconds ?? '';
+    _microsecondsController.text = widget.microseconds ?? '';
   }
 
   // to keep in sync upon rebuild
