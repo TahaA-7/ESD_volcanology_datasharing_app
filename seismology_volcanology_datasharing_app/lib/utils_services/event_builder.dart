@@ -24,7 +24,7 @@ List<Enum> getAvailableSubtypes(EventType type) {
     case EventType.volcanicNonEruptive:
       return EventSubtypeVolcanicNE.values;
     default:
-      return [];
+      return EventSubtype.values;
   }
 }
 

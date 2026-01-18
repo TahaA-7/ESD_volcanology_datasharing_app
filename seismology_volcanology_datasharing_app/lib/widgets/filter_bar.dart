@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/event_post_wizard.dart';
 
 class FilterBar extends StatelessWidget {
   const FilterBar({super.key});
@@ -11,13 +12,16 @@ class FilterBar extends StatelessWidget {
       child: Row(
         children: [
           ElevatedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              // TODO: open filters panel / drawer
+            },
             icon: const Icon(Icons.filter_alt_outlined),
             label: const Text('Filters'),
           ),
 
           const SizedBox(width: 12),
 
+          // Search box
           Expanded(
             child: TextField(
               decoration: InputDecoration(
@@ -35,20 +39,34 @@ class FilterBar extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          _iconButton(Icons.info_outline, 'Tutorial'),
-          _iconButton(Icons.bookmark_border, 'Bookmarks'),
-          _iconButton(Icons.download_outlined, 'Export'),
-          _iconButton(Icons.post_add, 'Post'),
+          _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
+          _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
+          _iconButton(Icons.download_outlined, 'Export', onPressed: () {}),
+          _iconButton(
+            Icons.post_add,
+            'Post',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  fullscreenDialog: true,
+                  builder: (_) => const EventPostWizardScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _iconButton(IconData icon, String label) {
+  Widget _iconButton(IconData icon,
+    String label, {
+    required VoidCallback onPressed,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: onPressed,
         icon: Icon(icon, size: 18),
         label: Text(label),
       ),
