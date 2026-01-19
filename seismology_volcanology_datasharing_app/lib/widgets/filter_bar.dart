@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../controllers/event_post_wizard_controller.dart';
+import '../screens/event_post_wizard.dart';
 
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
@@ -112,10 +115,33 @@ class _FilterBarState extends State<FilterBar> {
 
               const SizedBox(width: 12),
 
-              _iconButton(Icons.info_outline, 'Tutorial'),
-              _iconButton(Icons.bookmark_border, 'Bookmarks'),
-              _iconButton(Icons.download_outlined, 'Export'),
-              _iconButton(Icons.post_add, 'Post'),
+              _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
+              _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
+              _iconButton(Icons.download_outlined, 'Export', onPressed: () {}),
+              _iconButton(
+                Icons.post_add,
+                'Post',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      fullscreenDialog: true,
+                      builder: (_) => ChangeNotifierProvider(
+                        create: (_) => EventPostWizardController(),
+                        child: const EventPostWizardScreen(),
+                      ),
+            // BACKUP FOR IF FLUTTER PROVIDER PACKAGE DOESN'T WORK ANYMORE --- DO NOT REMOVE
+            // _iconButton(
+            //   Icons.post_add,
+            //   'Post',
+            //   onPressed: () {
+            //     Navigator.of(context).push(
+            //       MaterialPageRoute(
+            //         fullscreenDialog: true,
+            //         builder: (_) => const EventPostWizardScreen(),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -132,6 +158,7 @@ class _FilterBarState extends State<FilterBar> {
       ],
     );
   }
+
 
   Widget _filterPanel() {
     return Container(
@@ -237,6 +264,7 @@ class _FilterBarState extends State<FilterBar> {
     );
   }
 
+
   Widget _expandedSection() {
     return Padding(
       padding: const EdgeInsets.only(top: 16),
@@ -290,6 +318,7 @@ class _FilterBarState extends State<FilterBar> {
       ),
     );
   }
+
 
   Widget _timeFiltersSection() {
     return Column(
@@ -814,19 +843,20 @@ class _FilterBarState extends State<FilterBar> {
     );
   }
 
-  Widget _iconButton(IconData icon, String label) {
+  Widget _iconButton(IconData icon,
+    String label, {
+    required VoidCallback onPressed,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: OutlinedButton.icon(
-        onPressed: () {},
+        onPressed: onPressed,
         icon: Icon(icon, size: 18),
         label: Text(label),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        ),
       ),
     );
   }
+
 
   void _resetFilters() {
     setState(() {
