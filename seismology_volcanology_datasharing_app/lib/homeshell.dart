@@ -6,12 +6,16 @@ class HomeShell extends StatelessWidget {
   final Widget child;
   final HomeTab selectedTab;
   final ValueChanged<HomeTab> onTabSelected;
+  final Function(DateTime?, DateTime?)? onTimeRangeChanged;
+  final Function(String)? onQuickTimeSelected;
 
   const HomeShell({
     super.key,
     required this.child,
     required this.selectedTab,
     required this.onTabSelected,
+    this.onTimeRangeChanged,
+    this.onQuickTimeSelected,
   });
 
   @override
@@ -25,7 +29,10 @@ class HomeShell extends StatelessWidget {
             selectedTab: selectedTab,
             onTabSelected: onTabSelected,
           ),
-          const FilterBar(),
+          FilterBar(
+            onTimeRangeChanged: onTimeRangeChanged,
+            onQuickTimeSelected: onQuickTimeSelected,
+          ),
           Expanded(child: child),
         ],
       ),

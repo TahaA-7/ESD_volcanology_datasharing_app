@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../widgets/legend.dart';
 
 /// Map layers enum
 enum MapLayer {
@@ -76,6 +77,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ],
         ),
+        const MapLegend(),
 
         /// Layer selector button (top right)
         Positioned(

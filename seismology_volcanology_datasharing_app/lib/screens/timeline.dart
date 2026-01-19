@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'map.dart';
 import '../homeshell.dart';
 import '../widgets/top_tabs.dart';
+import '../widgets/timeline_widget.dart';
+import '../widgets/eventlist_widget.dart'; // Add this import
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,6 +14,27 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   HomeTab selectedTab = HomeTab.timeline;
+  
+  // Filter state
+  DateTime? _filterFromDate;
+  DateTime? _filterToDate;
+  String? _quickTimeFilter;
+
+  void _handleTimeRangeChanged(DateTime? fromDate, DateTime? toDate) {
+    setState(() {
+      _filterFromDate = fromDate;
+      _filterToDate = toDate;
+      _quickTimeFilter = null;
+    });
+  }
+
+  void _handleQuickTimeSelected(String quickTime) {
+    setState(() {
+      _quickTimeFilter = quickTime;
+      _filterFromDate = null;
+      _filterToDate = null;
+    });
+  }
 
   Widget _buildContent() {
     switch (selectedTab) {
@@ -19,20 +42,14 @@ class _HomePageState extends State<HomePage> {
         return const MapScreen();
 
       case HomeTab.eventList:
-        return const Center(
-          child: Text(
-            'Event List content',
-            style: TextStyle(fontSize: 18),
-          ),
-        );
+        return const EventListWidget(); // Add this
 
       case HomeTab.timeline:
       default:
-        return const Center(
-          child: Text(
-            'Timeline content',
-            style: TextStyle(fontSize: 18),
-          ),
+        return TimelineWidget(
+          filterFromDate: _filterFromDate,
+          filterToDate: _filterToDate,
+          quickTimeFilter: _quickTimeFilter,
         );
     }
   }
@@ -46,6 +63,8 @@ class _HomePageState extends State<HomePage> {
           selectedTab = tab;
         });
       },
+      onTimeRangeChanged: _handleTimeRangeChanged,
+      onQuickTimeSelected: _handleQuickTimeSelected,
       child: Container(
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
