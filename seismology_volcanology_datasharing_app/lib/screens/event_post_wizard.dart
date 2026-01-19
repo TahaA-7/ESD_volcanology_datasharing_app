@@ -1,13 +1,15 @@
-import 'dart:ffi';
+// import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
+// import '../utils_services/event_builder.dart';
 
 import '../models/event_post_model.dart';
-
+import '../controllers/event_post_wizard_controller.dart';
+import '../utils_services/event_drafter_submitter.dart';
 import '../utils_services/stringformatter_validator.dart';
-
 import '../widgets/date_time_picker_field.dart';
 import '../widgets/dropdowns.dart';
 import '../widgets/buttons.dart';
@@ -21,41 +23,93 @@ class EventPostWizardScreen extends StatefulWidget {
 }
 
 class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
-  // 1 - basic details step
-  int _currentStep = 0;
-  EventType? _eventType;
-  Enum? _eventSubtype;
-  // 2 - extra details step
-  //location
-  Country? _country;
-  String? _stateprovince; String? _towncity;
-  double? _longitude; double? _latitude;
-  //timerange
-  String? _years; String? _days; String? _hours; String? _minutes; String? _seconds; String? _microseconds;
-  DateTime? _startT; DateTime? _endT;
-  // 3 - upload step
-  Event? _preview;
-
   final List<String> _stepTitles = [
     '1 - basic details',
     '2 - extra details',
     '3 - upload',
   ];
 
+  // void _saveDraft() {
+  //   final controller = context.read<EventPostWizardController>();
+  //   if (controller.canBuildEvent) {
+  //     controller.saveDraft();
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Draft saved!')),
+  //     );
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Please fill in required fields')),
+  //     );
+  //   }
+  // }
+
+  Future<void> _saveDraft() async {
+    final controller = context.read<EventPostWizardController>();
+    if (!controller.canBuildEvent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in required fields')),
+      );
+      return;
+    }
+
+    try {
+      final event = controller.buildEventDuration();
+      // Call submission service
+      await EventSubmissionService().submit(event, draft: true);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Draft saved successfully!')),
+      );
+      controller.reset();
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+  Future<void> _submitEvent() async {
+    final controller = context.read<EventPostWizardController>();
+    if (!controller.canBuildEvent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in required fields')),
+      );
+      return;
+    }
+
+    try {
+      final event = controller.buildEventDuration();
+      // Call submission service
+      await EventSubmissionService().submit(event);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Event posted successfully!')),
+      );
+      controller.reset();
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
   void _nothing() {}
 
   void _continue() {
-    if (_currentStep < _stepTitles.length - 1) {
-      setState(() => _currentStep++);
+    final controller = context.read<EventPostWizardController>();
+    if (controller.currentStep < _stepTitles.length - 1) {
+      controller.nextStep();
     } else {
-      // TODO: submit event
-      Navigator.of(context).pop();
+      _submitEvent();
     }
   }
 
   void _goBack() {
-    if (_currentStep > 0) {
-      setState(() => _currentStep--);
+    final controller = context.read<EventPostWizardController>();
+    if (controller.currentStep > 0) {
+      controller.previousStep();
     } else {
       Navigator.of(context).pop();
     }
@@ -63,6 +117,7 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<EventPostWizardController>();
     return Scaffold(
       backgroundColor: const Color(0xFFE8E4DC),
       body: Column(
@@ -115,7 +170,7 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
                 OutlineButton(
                   label: 'Draft',
                   icon: Icons.description_outlined,
-                  onTap: () {},
+                  onTap: _saveDraft,
                 ),
                 const SizedBox(width: 8),
                 FilledButton_(
@@ -133,7 +188,7 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Row(
               children: List.generate(_stepTitles.length, (index) {
-                final isActive = index == _currentStep;
+                final isActive = index == controller.currentStep;
                 return Expanded(
                   child: Center(
                     child: Text(
@@ -154,7 +209,7 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: _buildStepContent(),
+              child: _buildStepContent(controller),
             ),
           ),
 
@@ -189,96 +244,12 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
     );
   }
 
-  Widget _buildStepContent() {
-    switch (_currentStep) {
+  Widget _buildStepContent(EventPostWizardController controller) {
+    switch (controller.currentStep) {
       case 0:
-        return _BasicDetailsStep(
-          eventType: _eventType,
-          eventSubtype: _eventSubtype,
-          onEventTypeChanged: (type) {
-            setState(() {
-              _eventType = type;
-              _eventSubtype = null;
-            });
-          },
-          onEventSubtypeChanged: (subtype) {
-            setState(() => _eventSubtype = subtype);
-          },
-        );
+        return _BasicDetailsStep();
       case 1:
-        return _ExtraDetailsStep(
-          // location
-          country: _country,
-          onCountryChanged: (Country? value) {
-            setState(() {
-              _country = value ?? Country.unspecified;
-            });
-          },
-          longitude: _longitude,
-          latitude: _latitude,
-          onCoordinatesChanged: ((double, double) coords) {
-            setState(() {
-              _longitude = coords.$1 as double?; _latitude = coords.$2 as double?;
-            });
-          },
-          stateprovince: _stateprovince,
-          onStateprovinceChanged: (String? value) {
-            setState(() {
-              _stateprovince = value;
-            });
-          },
-          towncity: _towncity,
-          onTowncityChanged: (String? value) {
-            setState(() {
-              _towncity = value;
-            });
-          },
-          // time
-          years: _years,
-          onYearsChanged: (String? value) {
-            setState(() {
-              _years = (value != null && value.isNumeric && value.isLessThan(101)) ? value : '0';
-            });
-          },
-          days: _days,
-          onDaysChanged: (String? value) {
-            setState(() {
-              _days = value != null && value.isLessThan(365) ? value : '0';
-            });
-          },
-          hours: _hours,
-          onHoursChanged: (String? value) {
-            setState(() {
-              _hours = value != null && value.isLessThan(24) ? value : '0';
-            });
-          },
-          minutes: _minutes,
-          onMinutesChanged: (String? value) {
-            setState(() {
-              _minutes = value != null && value.isLessThan(60) ? value : '0';
-            });
-          },
-          seconds: _seconds,
-          onSecondsChanged: (String? value) {
-            setState(() {
-              _seconds = value != null && value.isLessThan(60) ? value : '0';
-            });
-          },
-          microseconds: _microseconds,
-          onMicrosecondsChanged: (String? value) {
-            setState(() {
-              _microseconds = value != null && value.isLessThan(1000000) ? value : '0';
-            });
-          },
-          startTime: _startT,
-          endTime: _endT,
-          onStartTimeChanged: (dt) {
-            setState(() => _startT = dt);
-          },
-          onEndTimeChanged: (dt) {
-            setState(() => _endT = dt);
-          },
-        );
+        return _ExtraDetailsStep();
       case 2:
         return _UploadStep();
       default:
@@ -288,20 +259,12 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
 }
 
 class _BasicDetailsStep extends StatelessWidget {
-  final EventType? eventType;
-  final Enum? eventSubtype;
-  final ValueChanged<EventType?> onEventTypeChanged;
-  final ValueChanged<Enum?> onEventSubtypeChanged;
-
-  const _BasicDetailsStep({
-    required this.eventType,
-    required this.eventSubtype,
-    required this.onEventTypeChanged,
-    required this.onEventSubtypeChanged,
-  });
+  const _BasicDetailsStep();
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<EventPostWizardController>();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -312,16 +275,23 @@ class _BasicDetailsStep extends StatelessWidget {
         const SizedBox(height: 8),
 
         EventTypeDropdown(
-          value: eventType,
-          onChanged: onEventTypeChanged,
+          value: controller.eventType,
+          onChanged: (type) {
+            controller.eventType = type;
+            controller.eventSubtype = null;
+            controller.notifyListeners();
+          },
         ),
 
         const SizedBox(height: 8),
 
         EventSubtypeDropdown(
-          eventType: eventType,
-          value: eventSubtype,
-          onChanged: onEventSubtypeChanged,
+          eventType: controller.eventType,
+          value: controller.eventSubtype,
+          onChanged: (subtype) {
+            controller.eventSubtype = subtype;
+            controller.notifyListeners();
+          },
         ),
       ],
     );
@@ -329,46 +299,13 @@ class _BasicDetailsStep extends StatelessWidget {
 }
 
 class _ExtraDetailsStep extends StatefulWidget {
-  final Country? country;
-  final ValueChanged<Country?> onCountryChanged;
-  final double? longitude; final double? latitude;
-  final ValueChanged<(double, double)>? onCoordinatesChanged;
-  // final void Function(double lon, double lat)? onCoordinatesChanged;
-  final String? stateprovince; final String? towncity;
-  final ValueChanged<String> onStateprovinceChanged; final ValueChanged<String> onTowncityChanged;
-  //
-  final String? years; final String? days; final String? hours; final String? minutes; 
-    final String? seconds; final String? microseconds;
-  final ValueChanged<String> onYearsChanged; final ValueChanged<String> onDaysChanged;
-  final ValueChanged<String> onHoursChanged; final ValueChanged<String> onMinutesChanged;
-  final ValueChanged<String> onSecondsChanged; final ValueChanged<String> onMicrosecondsChanged;
-  //
-  final DateTime? startTime; final DateTime? endTime;
-  final ValueChanged<DateTime?> onStartTimeChanged; final ValueChanged<DateTime?> onEndTimeChanged;
-
-  const _ExtraDetailsStep({
-    Key? key,
-    required this.country,
-    required this.onCountryChanged,
-    required this.longitude, this.latitude,
-    required this.onCoordinatesChanged,
-    required this.stateprovince, required this.towncity,
-    required this.onStateprovinceChanged, required this.onTowncityChanged,
-    required this.years, required this.days, required this.hours, required this.minutes, 
-      required this.seconds, required this.microseconds,
-    required this.onYearsChanged, required this.onDaysChanged, required this.onHoursChanged,
-      required this.onMinutesChanged, required this.onSecondsChanged, required this.onMicrosecondsChanged,
-    required this.startTime, required this.endTime,
-    required this.onStartTimeChanged, required this.onEndTimeChanged,
-  }) : super(key: key);
+  const _ExtraDetailsStep();
 
   @override
   State<_ExtraDetailsStep> createState() => _ExtraDetailsStepState();
 }
 
 class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
-  Country? get country => widget.country;
-  ValueChanged<Country?> get onCountryChanged => widget.onCountryChanged;
   final TextEditingController _stateprovinceController = TextEditingController();
   final TextEditingController _towncityController = TextEditingController();
 
@@ -387,72 +324,52 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
   @override
   void initState() {
     super.initState();
-    _stateprovinceController.text = widget.stateprovince ?? '';
-    _towncityController.text = widget.towncity ?? '';
-
-    if (widget.latitude != null && widget.longitude != null) {
-      _selectedLocation = LatLng(widget.latitude!, widget.longitude!);
-    }
-
-    _longitudeController.text =
-        _selectedLocation.longitude.toStringAsFixed(6);
-    _latitudeController.text =
-        _selectedLocation.latitude.toStringAsFixed(6);
-    
-    _yearsController.text = widget.years ?? '';
-    _daysController.text = widget.days ?? '';
-    _hoursController.text = widget.hours ?? '';
-    _minutesController.text = widget.minutes ?? '';
-    _secondsController.text = widget.seconds ?? '';
-    _microsecondsController.text = widget.microseconds ?? '';
+    _initializeControllers();
   }
 
-  // to keep in sync upon rebuild
+  void _initializeControllers() {
+    final controller = context.read<EventPostWizardController>();
+    
+    _stateprovinceController.text = controller.stateprovince ?? '';
+    _towncityController.text = controller.towncity ?? '';
+
+    if (controller.latitude != null && controller.longitude != null) {
+      _selectedLocation = LatLng(controller.latitude!, controller.longitude!);
+    }
+
+    _longitudeController.text = _selectedLocation.longitude.toStringAsFixed(6);
+    _latitudeController.text = _selectedLocation.latitude.toStringAsFixed(6);
+    
+    _yearsController.text = controller.years ?? '';
+    _daysController.text = controller.days ?? '';
+    _hoursController.text = controller.hours ?? '';
+    _minutesController.text = controller.minutes ?? '';
+    _secondsController.text = controller.seconds ?? '';
+    _microsecondsController.text = controller.microseconds ?? '';
+  }
+
   @override
-  void didUpdateWidget(covariant _ExtraDetailsStep oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (widget.stateprovince != oldWidget.stateprovince) {
-      _stateprovinceController.text = widget.stateprovince ?? '';
-    }
-    if (widget.towncity != oldWidget.towncity) {
-      _towncityController.text = widget.towncity ?? '';
-    }
-
-    if (widget.latitude != oldWidget.latitude ||
-        widget.longitude != oldWidget.longitude) {
-      if (widget.latitude != null && widget.longitude != null) {
-        final newLocation = LatLng(widget.latitude!, widget.longitude!);
-
-        setState(() {
-          _selectedLocation = newLocation;
-          _longitudeController.text =
-              newLocation.longitude.toStringAsFixed(6);
-          _latitudeController.text =
-              newLocation.latitude.toStringAsFixed(6);
-        });
-
-        _mapController.move(newLocation, _mapController.camera.zoom);
-      }
-    }
-
-    if (widget.years != oldWidget.years && widget.years!.length < 3) {
-      if (widget.years?.isNumeric ?? false) {
-        _yearsController.text = widget.years ?? '0';
-      }
-    }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _initializeControllers();
   }
 
   void _updateLocationFromMap(LatLng location) {
+    final controller = context.read<EventPostWizardController>();
+    
     setState(() {
       _selectedLocation = location;
       _longitudeController.text = location.longitude.toStringAsFixed(6);
       _latitudeController.text = location.latitude.toStringAsFixed(6);
     });
-    widget.onCoordinatesChanged?.call((location.longitude, location.latitude));
+    
+    controller.longitude = location.longitude;
+    controller.latitude = location.latitude;
+    controller.notifyListeners();
   }
 
   void _updateLocationFromCoordinates() {
+    final controller = context.read<EventPostWizardController>();
     final lon = double.tryParse(_longitudeController.text);
     final lat = double.tryParse(_latitudeController.text);
     
@@ -461,19 +378,32 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
         _selectedLocation = LatLng(lat, lon);
         _mapController.move(_selectedLocation, _mapController.camera.zoom);
       });
-      widget.onCoordinatesChanged?.call((lon, lat));
+      
+      controller.longitude = lon;
+      controller.latitude = lat;
+      controller.notifyListeners();
     }
   }
 
   @override
   void dispose() {
+    _stateprovinceController.dispose();
+    _towncityController.dispose();
     _longitudeController.dispose();
     _latitudeController.dispose();
+    _yearsController.dispose();
+    _daysController.dispose();
+    _hoursController.dispose();
+    _minutesController.dispose();
+    _secondsController.dispose();
+    _microsecondsController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<EventPostWizardController>();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -483,36 +413,46 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
         ),
         const SizedBox(height: 8),
         CountrySelectionDropdown(
-          value: country,
-          onChanged: onCountryChanged),
+          value: controller.country,
+          onChanged: (Country? value) {
+            controller.country = value ?? Country.unspecified;
+            controller.notifyListeners();
+          },
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _stateprovinceController, 
           decoration: InputDecoration(
             labelText: 'State/province (press enter)',
             filled: true,
-            // isError: false,
             fillColor: Color(0xFF8C8B9E),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
           ),
-          onSubmitted: widget.onStateprovinceChanged),
+          onSubmitted: (value) {
+            controller.stateprovince = value;
+            controller.notifyListeners();
+          },
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _towncityController,
           decoration: InputDecoration(
             labelText: 'Town/city (press enter)',
             filled: true,
-            // isError: false,
             fillColor: Color(0xFF8C8B9E),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
           ),
-          onSubmitted: widget.onTowncityChanged),
+          onSubmitted: (value) {
+            controller.towncity = value;
+            controller.notifyListeners();
+          },
+        ),
         const SizedBox(height: 8),
         
         // Interactive coordinate fields
@@ -600,102 +540,133 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
           decoration: InputDecoration(
             labelText: 'Years (press enter)',
             filled: true,
-            // isError: false,
             fillColor: Color(0xFF8C8B9E),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
           ),
-          onSubmitted: widget.onYearsChanged),
-        const SizedBox(height: 8),
+          onSubmitted: (value) {
+            if (value.isNumeric && value.isLessThan(101)) {
+              controller.years = value;
+              controller.notifyListeners();
+            }
+          },
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _daysController, 
           decoration: InputDecoration(
             labelText: 'Days (press enter)',
             filled: true,
-            // isError: false,
             fillColor: Color(0xFF8C8B9E),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
           ),
-          onSubmitted: widget.onDaysChanged),
+          onSubmitted: (value) {
+            if (value.isLessThan(365)) {
+              controller.days = value;
+              controller.notifyListeners();
+            }
+          },
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _hoursController, 
           decoration: InputDecoration(
             labelText: 'Hours (press enter)',
             filled: true,
-            // isError: false,
             fillColor: Color(0xFF8C8B9E),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
           ),
-          onSubmitted: widget.onHoursChanged),
+          onSubmitted: (value) {
+            if (value.isLessThan(24)) {
+              controller.hours = value;
+              controller.notifyListeners();
+            }
+          },
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _minutesController, 
           decoration: InputDecoration(
             labelText: 'Minutes (press enter)',
             filled: true,
-            // isError: false,
             fillColor: Color(0xFF8C8B9E),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
           ),
-          onSubmitted: widget.onMinutesChanged),
+          onSubmitted: (value) {
+            if (value.isLessThan(60)) {
+              controller.minutes = value;
+              controller.notifyListeners();
+            }
+          },
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _secondsController, 
           decoration: InputDecoration(
             labelText: 'Seconds (press enter)',
             filled: true,
-            // isError: false,
             fillColor: Color(0xFF8C8B9E),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
           ),
-          onSubmitted: widget.onSecondsChanged),
+          onSubmitted: (value) {
+            if (value.isLessThan(60)) {
+              controller.seconds = value;
+              controller.notifyListeners();
+            }
+          },
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _microsecondsController, 
           decoration: InputDecoration(
             labelText: 'Microseconds (press enter)',
             filled: true,
-            // isError: false,
             fillColor: Color(0xFF8C8B9E),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
             ),
           ),
-          onSubmitted: widget.onMicrosecondsChanged),
+          onSubmitted: (value) {
+            if (value.isLessThan(1000000)) {
+              controller.microseconds = value;
+              controller.notifyListeners();
+            }
+          },
+        ),
         const SizedBox(height: 8),
         DateTimePickerField(
           label: 'start time',
-          value: widget.startTime,
-          isError: widget.endTime != null &&
-                  widget.startTime != null &&
-                  widget.startTime!.isAfter(widget.endTime!),
-          onChanged: widget.onStartTimeChanged,
+          value: controller.startTime,
+          isError: !controller.isTimeRangeValid,
+          onChanged: (dt) {
+            controller.startTime = dt;
+            controller.notifyListeners();
+          },
         ),
         const SizedBox(height: 8),
         DateTimePickerField(
           label: 'end time',
-          value: widget.endTime,
-          isError: widget.startTime != null &&
-                  widget.endTime != null &&
-                  widget.endTime!.isBefore(widget.startTime!),
-          onChanged: widget.onEndTimeChanged,
+          value: controller.endTime,
+          isError: !controller.isTimeRangeValid,
+          onChanged: (dt) {
+            controller.endTime = dt;
+            controller.notifyListeners();
+          },
         ),
       ],
     );
@@ -710,32 +681,6 @@ class _UploadStep extends StatelessWidget {
         'Upload media and confirm',
         style: TextStyle(fontSize: 18),
       ),
-    );
-  }
-}
-
-class _TextField extends StatelessWidget {
-  final String label;
-  final bool isError;
-  final ValueChanged<String>? onChanged;
-
-  const _TextField({required this.label, this.isError = false, this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      decoration: InputDecoration(
-        labelText: label,
-        filled: true,
-        fillColor: isError ? const Color(0xFFE89B9B) : const Color(0xFF8C8B9E),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
-        ),
-        labelStyle: const TextStyle(color: Colors.white70),
-      ),
-      style: const TextStyle(color: Colors.white),
-      onChanged: onChanged,
     );
   }
 }

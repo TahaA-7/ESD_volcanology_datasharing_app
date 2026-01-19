@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../controllers/event_post_wizard_controller.dart';
 import '../screens/event_post_wizard.dart';
 
 class FilterBar extends StatelessWidget {
@@ -49,7 +51,19 @@ class FilterBar extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   fullscreenDialog: true,
-                  builder: (_) => const EventPostWizardScreen(),
+                  builder: (_) => ChangeNotifierProvider(
+                    create: (_) => EventPostWizardController(),
+                    child: const EventPostWizardScreen(),
+                  ),
+          // BACKUP FOR IF FLUTTER PROVIDER PACKAGE DOESN'T WORK ANYMORE --- DO NOT REMOVE
+          // _iconButton(
+          //   Icons.post_add,
+          //   'Post',
+          //   onPressed: () {
+          //     Navigator.of(context).push(
+          //       MaterialPageRoute(
+          //         fullscreenDialog: true,
+          //         builder: (_) => const EventPostWizardScreen(),
                 ),
               );
             },

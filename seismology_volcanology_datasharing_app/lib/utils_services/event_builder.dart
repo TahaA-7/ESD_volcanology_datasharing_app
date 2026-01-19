@@ -1,9 +1,9 @@
 import '../models/event_post_model.dart';
 
-EventType? selectedType;
-Enum? selectedSubtype;
+// EventType? selectedType;
+// Enum? selectedSubtype;
 
-List<Enum> getAvailableSubtypes(EventType type) {
+List<Enum> getAvailableSubtypesForType(EventType type) {
   switch (type) {
     case EventType.anthropogenic:
       return EventSubtypeAnthropogenic.values;
@@ -24,50 +24,51 @@ List<Enum> getAvailableSubtypes(EventType type) {
     case EventType.volcanicNonEruptive:
       return EventSubtypeVolcanicNE.values;
     default:
-      return EventSubtype.values;
+      return [EventSubtype.unspecified];
+      // return EventSubtype.values;
   }
 }
 
 
-Event buildEvent() {
-  switch (selectedType) {
+Event buildEvent(EventType eventType, Enum eventSubtype) {
+  switch (eventType) {
     case EventType.anthropogenic:
       return EventAnthropogenic(
-        eventSubtype: selectedSubtype as EventSubtypeAnthropogenic,
+        eventSubtype: eventSubtype as EventSubtypeAnthropogenic,
       );
     case EventType.atmospheric_coupledSignals:
       return EventAtmospheric(
-        eventSubtype: selectedSubtype as EventSubtypeAtmospheric,
+        eventSubtype: eventSubtype as EventSubtypeAtmospheric,
       );
     case EventType.cryoseismic_glacial:
       return EventCryoseismic(
-        eventSubtype: selectedSubtype as EventSubtypeCryoseismic,
+        eventSubtype: eventSubtype as EventSubtypeCryoseismic,
       );
     case EventType.geodetic_deformation:
       return EventGeodetic(
-        eventSubtype: selectedSubtype as EventSubtypeGeodetic,
+        eventSubtype: eventSubtype as EventSubtypeGeodetic,
       );
     case EventType.hydrothermal_fluidDriven:
       return EventHydrothermal(
-        eventSubtype: selectedSubtype as EventSubtypeHydrothermal,
+        eventSubtype: eventSubtype as EventSubtypeHydrothermal,
       );
     case EventType.massMovement_surfaceInstability:
       return EventMassMovement(
-        eventSubtype: selectedSubtype as EventSubtypeMM,
+        eventSubtype: eventSubtype as EventSubtypeMM,
       );
     case EventType.seismic_tectonic:
       return EventSeismic(
-        eventSubtype: selectedSubtype as EventSubtypeSeismic,
+        eventSubtype: eventSubtype as EventSubtypeSeismic,
       );
     case EventType.volcanicEruptive_surfaceProcess:
       return EventVolcanicEruptive(
-        eventSubtype: selectedSubtype as EventSubtypeVolcanicE,
+        eventSubtype: eventSubtype as EventSubtypeVolcanicE,
       );
     case EventType.volcanicNonEruptive:
       return EventVolcanicNonEruptive(
-        eventSubtype: selectedSubtype as EventSubtypeVolcanicNE,
+        eventSubtype: eventSubtype as EventSubtypeVolcanicNE,
       );
     default:
-      throw UnsupportedError('Unknown event type');
+      throw UnsupportedError('Unknown event type: $eventType');
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../controllers/event_post_wizard_controller.dart';
 import '../models/event_post_model.dart';
 import '../utils_services/event_builder.dart';
 import '../utils_services/stringformatter_validator.dart';
@@ -88,9 +90,11 @@ class EventSubtypeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtypes = eventType != null
-        ? List<Enum>.from(getAvailableSubtypes(eventType!))
-        : <Enum>[];
+    final controller = context.read<EventPostWizardController>();
+    final subtypes = controller.getAvailableSubtypes();
+    // final subtypes = eventType != null
+    //     ? List<Enum>.from(getAvailableSubtypes(eventType!))
+    //     : <Enum>[];
 
     return DropdownButtonFormField<Enum>(
       initialValue: value,
