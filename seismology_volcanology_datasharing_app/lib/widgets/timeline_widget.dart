@@ -1,6 +1,6 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
 
 class TimelineWidget extends StatefulWidget {
   final DateTime? filterFromDate;
@@ -317,8 +317,8 @@ class TimelinePainter extends CustomPainter {
     final duration = endTime.difference(startTime);
     final isMultiDay = duration.inHours > 24;
 
-    // Draw timeline background
-    final bgPaint = Paint()..color = const Color(0xFFF5E6E0);
+    // Draw timeline background - WHITE
+    final bgPaint = Paint()..color = Colors.white;
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       bgPaint,
@@ -346,12 +346,12 @@ class TimelinePainter extends CustomPainter {
 
       // Draw vertical line
       canvas.drawLine(
-        Offset(x, size.height * 0.1),
-        Offset(x, size.height),
+        Offset(x, 0),
+        Offset(x, size.height - 60),
         paint,
       );
 
-      // Draw hour label (top)
+      // Draw hour label (BOTTOM)
       final hourText = DateFormat('HH:mm').format(currentTime);
       textPainter.text = TextSpan(
         text: hourText,
@@ -364,7 +364,7 @@ class TimelinePainter extends CustomPainter {
       textPainter.layout();
       textPainter.paint(
         canvas,
-        Offset(x - textPainter.width / 2, 5),
+        Offset(x - textPainter.width / 2, size.height - 55),
       );
 
       // Draw "start" label at beginning
@@ -438,12 +438,12 @@ class TimelinePainter extends CustomPainter {
 
       // Draw vertical line
       canvas.drawLine(
-        Offset(x, size.height * 0.1),
-        Offset(x, size.height),
+        Offset(x, 0),
+        Offset(x, size.height - 60),
         paint,
       );
 
-      // Draw date label (top)
+      // Draw date label (BOTTOM)
       final dateText = DateFormat('dd/MM').format(currentDate);
       textPainter.text = TextSpan(
         text: dateText,
@@ -456,7 +456,7 @@ class TimelinePainter extends CustomPainter {
       textPainter.layout();
       textPainter.paint(
         canvas,
-        Offset(x - textPainter.width / 2, 5),
+        Offset(x - textPainter.width / 2, size.height - 55),
       );
 
       // Draw "start" label at beginning

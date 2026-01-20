@@ -129,13 +129,8 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
             child: SafeArea(
               bottom: false,
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.end, // align to the right
                 children: [
-                  NavButton(icon: Icons.view_timeline, label: 'Timeline'),
-                  const Spacer(),
-                  NavButton(icon: Icons.map_outlined, label: 'Map'),
-                  const Spacer(),
-                  NavButton(icon: Icons.list, label: 'Event List'),
-                  const Spacer(),
                   // Back button (styled)
                   InkWell(
                     onTap: _goBack,
