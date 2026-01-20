@@ -122,7 +122,7 @@ class _MapScreenState extends State<MapScreen> {
                 mini: true,
                 onPressed: () {
                   _mapController.move(
-                    _mapController.center,
+                    _mapController.camera.center,
                     _currentZoom + 1,
                   );
                 },
@@ -134,7 +134,7 @@ class _MapScreenState extends State<MapScreen> {
                 mini: true,
                 onPressed: () {
                   _mapController.move(
-                    _mapController.center,
+                    _mapController.camera.center,
                     _currentZoom - 1,
                   );
                 },
