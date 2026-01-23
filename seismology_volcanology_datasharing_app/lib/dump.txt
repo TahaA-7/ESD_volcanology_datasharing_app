@@ -1,0 +1,69 @@
+void _initializeControllers() {
+    final wizard = context.read<EventPostWizardController>();
+
+    final Map<String, dynamic Function()> bindings = {
+      // anthropogenic
+      'activityType': () => wizard.activityType,
+      'explosiveYieldKg': () => wizard.explosiveYieldKg,
+      'isConfirmedIntentional': () => wizard.isConfirmedIntentional,
+
+      // atmospheric
+      'phenomenon': () => wizard.phenomenon,
+      'peakOverpressurePa': () => wizard.peakOverpressurePa,
+      'altitudeKm': () => wizard.altitudeKm,
+      'estimatedEnergyJoules': () => wizard.estimatedEnergyJoules,
+
+      // cryoseismic
+      'iceThicknessMeters': () => wizard.iceThicknessMeters,
+      'airTemperatureCelsius': () => wizard.airTemperatureCelsius,
+      'glacierIceBodyName': () => wizard.glacierIceBodyName,
+      'crackLengthMeters': () => wizard.crackLengthMeters,
+
+      // geodetic
+      'displacementNorthMm': () => wizard.displacementNorthMm,
+      'displacementEastMm': () => wizard.displacementEastMm,
+      'displacementVerticalMm': () => wizard.displacementVerticalMm,
+      'instrumentType': () => wizard.instrumentType,
+
+      // hydrothermal
+      'featureType': () => wizard.featureType,
+      'waterTemperatureCelsius': () => wizard.waterTemperatureCelsius,
+      'phLevel': () => wizard.phLevel,
+      'dischargeRateLitersPerSec': () => wizard.dischargeRateLitersPerSec,
+      'eruptionOccurred': () => wizard.eruptionOccurred,
+
+      // mass movement
+      'volumeM3': () => wizard.volumeM3,
+      'velocityMetersPerSecond': () => wizard.velocityMetersPerSecond,
+      'runoutDistanceMeters': () => wizard.runoutDistanceMeters,
+      'slopeAngleDegrees': () => wizard.slopeAngleDegrees,
+      'trigger': () => wizard.trigger,
+      'secondaryHazard': () => wizard.secondaryHazard,
+
+      // seismic
+      'magnitude': () => wizard.magnitude,
+      'magnitudeType': () => wizard.magnitudeType,
+      'depth': () => wizard.depth,
+      'depthUncertainty': () => wizard.depthUncertainty,
+      'focalMechanism': () => wizard.focalMechanism,
+
+      // volcanic
+      'volcanoName': () => wizard.volcanoName,
+      'elevation': () => wizard.elevation,
+
+      // volcanic eruptive
+      'plumeHeightMeters': () => wizard.plumeHeightMeters,
+      'vei': () => wizard.vei,
+      'hazards': () => wizard.hazards,
+
+      // volcanic non-eruptive
+      'groundDeformationMm': () => wizard.groundDeformationMm,
+      'so2Flux': () => wizard.so2Flux,
+      'fumaroleTemperature': () => wizard.fumaroleTemperature,
+    };
+
+    bindings.forEach((key, getter) {
+      final value = getter();
+      _controllers[key]?.text = value?.toString() ?? '';
+    });
+  }

@@ -191,7 +191,7 @@
 //   Widget _buildStepContent() {
 //     switch (_currentStep) {
 //       case 0:
-//         return _BasicDetailsStep(
+//         return _BasicDetailsStepEvent(
 //           eventType: _eventType,
 //           eventSubtype: _eventSubtype,
 //           onEventTypeChanged: (type) {
@@ -205,7 +205,7 @@
 //           },
 //         );
 //       case 1:
-//         return _ExtraDetailsStep(
+//         return _BasicDetailsStepLocation(
 //           // location
 //           country: _country,
 //           onCountryChanged: (Country? value) {
@@ -355,13 +355,13 @@
 //   }
 // }
 
-// class _BasicDetailsStep extends StatelessWidget {
+// class _BasicDetailsStepEvent extends StatelessWidget {
 //   final EventType? eventType;
 //   final Enum? eventSubtype;
 //   final ValueChanged<EventType?> onEventTypeChanged;
 //   final ValueChanged<Enum?> onEventSubtypeChanged;
 
-//   const _BasicDetailsStep({
+//   const _BasicDetailsStepEvent({
 //     required this.eventType,
 //     required this.eventSubtype,
 //     required this.onEventTypeChanged,
@@ -396,7 +396,7 @@
 //   }
 // }
 
-// class _ExtraDetailsStep extends StatefulWidget {
+// class _BasicDetailsStepLocation extends StatefulWidget {
 //   final Country? country;
 //   final ValueChanged<Country?> onCountryChanged;
 //   final double? longitude; final double? latitude;
@@ -414,7 +414,7 @@
 //   final DateTime? startTime; final DateTime? endTime;
 //   final ValueChanged<DateTime?> onStartTimeChanged; final ValueChanged<DateTime?> onEndTimeChanged;
 
-//   const _ExtraDetailsStep({
+//   const _BasicDetailsStepLocation({
 //     Key? key,
 //     required this.country,
 //     required this.onCountryChanged,
@@ -431,10 +431,10 @@
 //   }) : super(key: key);
 
 //   @override
-//   State<_ExtraDetailsStep> createState() => _ExtraDetailsStepState();
+//   State<_BasicDetailsStepLocation> createState() => _BasicDetailsStepLocationState();
 // }
 
-// class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
+// class _BasicDetailsStepLocationState extends State<_BasicDetailsStepLocation> {
 //   Country? get country => widget.country;
 //   ValueChanged<Country?> get onCountryChanged => widget.onCountryChanged;
 //   final TextEditingController _stateprovinceController = TextEditingController();
@@ -472,7 +472,7 @@
 
 //   // to keep in sync upon rebuild
 //   @override
-//   void didUpdateWidget(covariant _ExtraDetailsStep oldWidget) {
+//   void didUpdateWidget(covariant _BasicDetailsStepLocation oldWidget) {
 //     super.didUpdateWidget(oldWidget);
 
 //     if (widget.stateprovince != oldWidget.stateprovince) {

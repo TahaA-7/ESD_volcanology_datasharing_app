@@ -12,14 +12,14 @@ class EventPostWizardController extends ChangeNotifier {
   Enum? eventSubtype;
 
 
-  // Step 2 – location
+  // Step 1.1 – location
   Country? country;
   String? stateprovince;
   String? towncity;
   double? longitude;
   double? latitude;
 
-  // Step 2 – duration
+  // Step 1.2 – duration
   String? years;
   String? days;
   String? hours;
@@ -27,11 +27,62 @@ class EventPostWizardController extends ChangeNotifier {
   String? seconds;
   String? microseconds;
 
-  // Step 2 – absolute time
+  // Step 1.2 – absolute time
   DateTime? startTime;
   DateTime? endTime;
 
-  // Step 3
+  // Step 2 - extra details
+  String? activityType;
+  String? explosiveYieldKg;
+  String? isConfirmedIntentional;
+
+  String? phenomenon;
+  String? peakOverpressurePa;
+  String? altitudeKm;
+  String? estimatedEnergyJoules;
+
+  String? iceThicknessMeters;
+  String? airTemperatureCelsius;
+  String? glacierIceBodyName;
+  String? crackLengthMeters;
+
+  String? displacementNorthMm;
+  String? displacementEastMm;
+  String? displacementVerticalMm;
+  String? instrumentType;
+
+  String? featureType;
+  String? waterTemperatureCelsius;
+  String? phLevel;
+  String? dischargeRateLitersPerSec;
+  String? eruptionOccurred;
+
+  String? volumeM3;
+  String? velocityMetersPerSecond;
+  String? runoutDistanceMeters;
+  String? slopeAngleDegrees;
+  String? trigger;
+  String? secondaryHazard;
+
+  String? magnitude;
+  String? magnitudeType;
+  String? depth;
+  String? depthUncertainty;
+  String? focalMechanism;
+
+  String? volcanoName;
+  String? elevation;
+
+  String? plumeHeightMeters;
+  String? vei;
+  String? hazards;
+
+  String? groundDeformationMm;
+  String? so2Flux;
+  String? fumaroleTemperature;
+
+
+  // Step 3 - upload
   List<String>? mediaPaths=[];
 
     // ---- Build Event ----
@@ -84,7 +135,7 @@ class EventPostWizardController extends ChangeNotifier {
   // ---- Navigation ----
 
   void nextStep() {
-    if (currentStep < 2) {
+    if (currentStep < 4) {
       currentStep++;
       notifyListeners();
     }
@@ -108,7 +159,7 @@ class EventPostWizardController extends ChangeNotifier {
     switch (currentStep) {
       case 0:
         return eventType != null;
-      case 1:
+      case 2:
         return isTimeRangeValid;
       default:
         return true;
@@ -116,7 +167,13 @@ class EventPostWizardController extends ChangeNotifier {
   }
 
   bool get canBuildEvent {
-    return eventType != null;
+    if (eventType != null){
+      if (longitude != null && latitude != null) {
+        return true;
+      }
+      if (stateprovince != null) {return true;}
+    }
+    return false;
   }
 
   // ---- Draft & Submit ----

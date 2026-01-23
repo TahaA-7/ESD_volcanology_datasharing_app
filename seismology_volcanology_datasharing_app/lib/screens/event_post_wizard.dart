@@ -1,4 +1,5 @@
 // import 'dart:ffi';
+library event_post_wizard;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -14,6 +15,11 @@ import '../widgets/date_time_picker_field.dart';
 import '../widgets/dropdowns.dart';
 import '../widgets/buttons.dart';
 
+// part 'event_post_wizard_state/basic_details_step_event_state.dart';
+part 'event_post_wizard_state/basic_details_step_location_state.dart';
+part 'event_post_wizard_state/basic_details_step_time_state.dart';
+part 'event_post_wizard_state/extra_details_step_state.dart';
+
 
 class EventPostWizardScreen extends StatefulWidget {
   const EventPostWizardScreen({super.key});
@@ -24,7 +30,9 @@ class EventPostWizardScreen extends StatefulWidget {
 
 class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
   final List<String> _stepTitles = [
-    '1 - basic details',
+    '1 - basic details: event type',
+    '1 - basic details: location',
+    '1 - basic details: time range',
     '2 - extra details',
     '3 - upload',
   ];
@@ -242,10 +250,14 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
   Widget _buildStepContent(EventPostWizardController controller) {
     switch (controller.currentStep) {
       case 0:
-        return _BasicDetailsStep();
+        return _BasicDetailsStepEvent();
       case 1:
-        return _ExtraDetailsStep();
+        return _BasicDetailsStepLocation();
       case 2:
+        return _BasicDetailsStepTime();
+      case 3:
+        return _ExtraDetailsStep();
+      case 4:
         return _UploadStep();
       default:
         return const SizedBox();
@@ -253,8 +265,8 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
   }
 }
 
-class _BasicDetailsStep extends StatelessWidget {
-  const _BasicDetailsStep();
+class _BasicDetailsStepEvent extends StatelessWidget {
+  const _BasicDetailsStepEvent();
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +305,23 @@ class _BasicDetailsStep extends StatelessWidget {
   }
 }
 
+class _BasicDetailsStepTime extends StatefulWidget {
+  const _BasicDetailsStepTime();
+
+  @override State<_BasicDetailsStepTime> createState() => _BasicDetailsStepTimeState();
+}
+
+
+
+class _BasicDetailsStepLocation extends StatefulWidget {
+  const _BasicDetailsStepLocation();
+
+  @override
+  State<_BasicDetailsStepLocation> createState() => _BasicDetailsStepLocationState();
+}
+
+
+
 class _ExtraDetailsStep extends StatefulWidget {
   const _ExtraDetailsStep();
 
@@ -300,373 +329,7 @@ class _ExtraDetailsStep extends StatefulWidget {
   State<_ExtraDetailsStep> createState() => _ExtraDetailsStepState();
 }
 
-class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
-  final TextEditingController _stateprovinceController = TextEditingController();
-  final TextEditingController _towncityController = TextEditingController();
 
-  final MapController _mapController = MapController();
-  LatLng _selectedLocation = LatLng(0, 0);
-  final TextEditingController _longitudeController = TextEditingController();
-  final TextEditingController _latitudeController = TextEditingController();
-
-  final TextEditingController _yearsController = TextEditingController();
-  final TextEditingController _daysController = TextEditingController();
-  final TextEditingController _hoursController = TextEditingController();
-  final TextEditingController _minutesController = TextEditingController();
-  final TextEditingController _secondsController = TextEditingController();
-  final TextEditingController _microsecondsController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeControllers();
-  }
-
-  void _initializeControllers() {
-    final controller = context.read<EventPostWizardController>();
-    
-    _stateprovinceController.text = controller.stateprovince ?? '';
-    _towncityController.text = controller.towncity ?? '';
-
-    if (controller.latitude != null && controller.longitude != null) {
-      _selectedLocation = LatLng(controller.latitude!, controller.longitude!);
-    }
-
-    _longitudeController.text = _selectedLocation.longitude.toStringAsFixed(6);
-    _latitudeController.text = _selectedLocation.latitude.toStringAsFixed(6);
-    
-    _yearsController.text = controller.years ?? '';
-    _daysController.text = controller.days ?? '';
-    _hoursController.text = controller.hours ?? '';
-    _minutesController.text = controller.minutes ?? '';
-    _secondsController.text = controller.seconds ?? '';
-    _microsecondsController.text = controller.microseconds ?? '';
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _initializeControllers();
-  }
-
-  void _updateLocationFromMap(LatLng location) {
-    final controller = context.read<EventPostWizardController>();
-    
-    setState(() {
-      _selectedLocation = location;
-      _longitudeController.text = location.longitude.toStringAsFixed(6);
-      _latitudeController.text = location.latitude.toStringAsFixed(6);
-    });
-    
-    controller.longitude = location.longitude;
-    controller.latitude = location.latitude;
-    controller.notifyListeners();
-  }
-
-  void _updateLocationFromCoordinates() {
-    final controller = context.read<EventPostWizardController>();
-    final lon = double.tryParse(_longitudeController.text);
-    final lat = double.tryParse(_latitudeController.text);
-    
-    if (lon != null && lat != null) {
-      setState(() {
-        _selectedLocation = LatLng(lat, lon);
-        _mapController.move(_selectedLocation, _mapController.camera.zoom);
-      });
-      
-      controller.longitude = lon;
-      controller.latitude = lat;
-      controller.notifyListeners();
-    }
-  }
-
-  @override
-  void dispose() {
-    _stateprovinceController.dispose();
-    _towncityController.dispose();
-    _longitudeController.dispose();
-    _latitudeController.dispose();
-    _yearsController.dispose();
-    _daysController.dispose();
-    _hoursController.dispose();
-    _minutesController.dispose();
-    _secondsController.dispose();
-    _microsecondsController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = context.watch<EventPostWizardController>();
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'location',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-        CountrySelectionDropdown(
-          value: controller.country,
-          onChanged: (Country? value) {
-            controller.country = value ?? Country.unspecified;
-            controller.notifyListeners();
-          },
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _stateprovinceController, 
-          decoration: InputDecoration(
-            labelText: 'State/province (press enter)',
-            filled: true,
-            fillColor: Color(0xFF8C8B9E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (value) {
-            controller.stateprovince = value;
-            controller.notifyListeners();
-          },
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _towncityController,
-          decoration: InputDecoration(
-            labelText: 'Town/city (press enter)',
-            filled: true,
-            fillColor: Color(0xFF8C8B9E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (value) {
-            controller.towncity = value;
-            controller.notifyListeners();
-          },
-        ),
-        const SizedBox(height: 8),
-        
-        // Interactive coordinate fields
-        TextField(
-          controller: _longitudeController,
-          keyboardType: TextInputType.numberWithOptions(decimal: true, signed: true),
-          decoration: InputDecoration(
-            labelText: 'Longitude (press enter)',
-            filled: true,
-            fillColor: const Color(0xFFE89B9B),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (_) => _updateLocationFromCoordinates(),
-        ),
-        const SizedBox(height: 8),
-        
-        TextField(
-          controller: _latitudeController,
-          keyboardType: TextInputType.numberWithOptions(decimal: true, signed: true),
-          decoration: InputDecoration(
-            labelText: 'Latitude (press enter)',
-            filled: true,
-            fillColor: const Color(0xFFE89B9B),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (_) => _updateLocationFromCoordinates(),
-        ),
-        const SizedBox(height: 16),
-        
-        // Interactive Map
-        Container(
-          height: 300,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black87),
-          ),
-          child: FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _selectedLocation,
-              initialZoom: 13.0,
-              onTap: (tapPosition, point) => _updateLocationFromMap(point),
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.app',
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _selectedLocation,
-                    width: 40,
-                    height: 40,
-                    child: const Icon(
-                      Icons.location_pin,
-                      color: Colors.red,
-                      size: 40,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Tap on the map to select a location',
-          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-        ),
-        
-        const SizedBox(height: 24),
-        const Text(
-          'timerange',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _yearsController, 
-          decoration: InputDecoration(
-            labelText: 'Years (press enter)',
-            filled: true,
-            fillColor: Color(0xFF8C8B9E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (value) {
-            if (value.isNumeric && value.isLessThan(101)) {
-              controller.years = value;
-              controller.notifyListeners();
-            }
-          },
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _daysController, 
-          decoration: InputDecoration(
-            labelText: 'Days (press enter)',
-            filled: true,
-            fillColor: Color(0xFF8C8B9E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (value) {
-            if (value.isLessThan(365)) {
-              controller.days = value;
-              controller.notifyListeners();
-            }
-          },
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _hoursController, 
-          decoration: InputDecoration(
-            labelText: 'Hours (press enter)',
-            filled: true,
-            fillColor: Color(0xFF8C8B9E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (value) {
-            if (value.isLessThan(24)) {
-              controller.hours = value;
-              controller.notifyListeners();
-            }
-          },
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _minutesController, 
-          decoration: InputDecoration(
-            labelText: 'Minutes (press enter)',
-            filled: true,
-            fillColor: Color(0xFF8C8B9E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (value) {
-            if (value.isLessThan(60)) {
-              controller.minutes = value;
-              controller.notifyListeners();
-            }
-          },
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _secondsController, 
-          decoration: InputDecoration(
-            labelText: 'Seconds (press enter)',
-            filled: true,
-            fillColor: Color(0xFF8C8B9E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (value) {
-            if (value.isLessThan(60)) {
-              controller.seconds = value;
-              controller.notifyListeners();
-            }
-          },
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _microsecondsController, 
-          decoration: InputDecoration(
-            labelText: 'Microseconds (press enter)',
-            filled: true,
-            fillColor: Color(0xFF8C8B9E),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          onSubmitted: (value) {
-            if (value.isLessThan(1000000)) {
-              controller.microseconds = value;
-              controller.notifyListeners();
-            }
-          },
-        ),
-        const SizedBox(height: 8),
-        DateTimePickerField(
-          label: 'start time',
-          value: controller.startTime,
-          isError: !controller.isTimeRangeValid,
-          onChanged: (dt) {
-            controller.startTime = dt;
-            controller.notifyListeners();
-          },
-        ),
-        const SizedBox(height: 8),
-        DateTimePickerField(
-          label: 'end time',
-          value: controller.endTime,
-          isError: !controller.isTimeRangeValid,
-          onChanged: (dt) {
-            controller.endTime = dt;
-            controller.notifyListeners();
-          },
-        ),
-      ],
-    );
-  }
-}
 
 class _UploadStep extends StatelessWidget {
   @override
