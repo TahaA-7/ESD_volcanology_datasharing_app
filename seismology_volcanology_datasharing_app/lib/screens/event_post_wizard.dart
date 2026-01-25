@@ -18,6 +18,7 @@ import '../widgets/buttons.dart';
 // part 'event_post_wizard_state/basic_details_step_event_state.dart';
 part 'event_post_wizard_state/basic_details_step_location_state.dart';
 part 'event_post_wizard_state/basic_details_step_time_state.dart';
+part 'event_post_wizard_state/event_type_details_step_state.dart';
 part 'event_post_wizard_state/extra_details_step_state.dart';
 
 
@@ -33,8 +34,9 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
     '1 - basic details: event type',
     '1 - basic details: location',
     '1 - basic details: time range',
-    '2 - extra details',
-    '3 - upload',
+    '2 - event type details',
+    '3 - extra details',
+    '4 - upload',
   ];
 
   // void _saveDraft() {
@@ -256,8 +258,10 @@ class _EventPostWizardScreenState extends State<EventPostWizardScreen> {
       case 2:
         return _BasicDetailsStepTime();
       case 3:
+        return _EventTypeDetailsStep();
+      case 4: 
         return _ExtraDetailsStep();
-      case 4:
+      case 5:
         return _UploadStep();
       default:
         return const SizedBox();
@@ -318,6 +322,15 @@ class _BasicDetailsStepLocation extends StatefulWidget {
 
   @override
   State<_BasicDetailsStepLocation> createState() => _BasicDetailsStepLocationState();
+}
+
+
+
+class _EventTypeDetailsStep extends StatefulWidget {
+  const _EventTypeDetailsStep();
+
+  @override
+  State<_EventTypeDetailsStep> createState() => _EventTypeDetailsStepState();
 }
 
 

@@ -31,7 +31,7 @@ class EventPostWizardController extends ChangeNotifier {
   DateTime? startTime;
   DateTime? endTime;
 
-  // Step 2 - extra details
+  // Step 2 - event type details
   String? activityType;
   String? explosiveYieldKg;
   String? isConfirmedIntentional;
@@ -82,7 +82,12 @@ class EventPostWizardController extends ChangeNotifier {
   String? fumaroleTemperature;
 
 
-  // Step 3 - upload
+  // Step 3 - extra details
+  String? source;
+  EventPostStatus? eventPostStatus;
+  String? description;
+
+  // Step 4 - upload
   List<String>? mediaPaths=[];
 
     // ---- Build Event ----
@@ -135,7 +140,7 @@ class EventPostWizardController extends ChangeNotifier {
   // ---- Navigation ----
 
   void nextStep() {
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       currentStep++;
       notifyListeners();
     }

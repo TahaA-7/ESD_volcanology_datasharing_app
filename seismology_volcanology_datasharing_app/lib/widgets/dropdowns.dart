@@ -146,6 +146,36 @@ class CountrySelectionDropdown extends StatelessWidget {
   }
 }
 
+class EventPostStatusSelectionDropdown extends StatelessWidget {
+  final EventPostStatus? value;
+  final ValueChanged<EventPostStatus?> onChanged;
+
+  const EventPostStatusSelectionDropdown ({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<EventPostStatus> (
+      initialValue: value,
+      hint: const Text('Event Post Status', style: TextStyle(color: Colors.white)),
+      decoration: _dropdownDecoration(),
+      dropdownColor: const Color(0xFF8C8B9E),
+      iconEnabledColor: Colors.white,
+      items: EventPostStatus.values.asMap().entries.map((entry) {
+        return DropdownMenuItem(
+          value: entry.value,
+          child: Text (
+            entry.value.name.toString().title(),
+          ),
+        );
+      }).toList(),
+      onChanged: onChanged,
+    );
+  }
+}
+
 InputDecoration _dropdownDecoration() => InputDecoration(
   filled: true,
   fillColor: const Color(0xFF8C8B9E),
