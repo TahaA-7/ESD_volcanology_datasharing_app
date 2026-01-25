@@ -15,8 +15,8 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
   void _initializeControllers() {
     final controller = context.read<EventPostWizardController>();
     
-    _sourceController.text = controller.stateprovince ?? '';
-    _descriptionBoxController.text = controller.towncity ?? '';
+    _sourceController.text = controller.source ?? '';
+    _descriptionBoxController.text = controller.description ?? '';
   }
 
   @override

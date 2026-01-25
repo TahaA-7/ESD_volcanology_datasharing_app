@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:seismology_volcanology_datasharing_app/screens/event_post_landing_screen.dart';
 import '../controllers/event_post_wizard_controller.dart';
 import '../screens/event_post_wizard.dart';
 
@@ -127,7 +128,8 @@ class _FilterBarState extends State<FilterBar> {
                       fullscreenDialog: true,
                       builder: (_) => ChangeNotifierProvider(
                         create: (_) => EventPostWizardController(),
-                        child: const EventPostWizardScreen(),
+                        // child: const EventPostWizardScreen(),
+                        child: const EventPostLandingScreen(),
                       ),
             // BACKUP FOR IF FLUTTER PROVIDER PACKAGE DOESN'T WORK ANYMORE --- DO NOT REMOVE
             // _iconButton(
