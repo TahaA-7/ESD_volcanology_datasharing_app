@@ -21,6 +21,9 @@ part 'event_post_wizard_state/basic_details_step_time_state.dart';
 part 'event_post_wizard_state/event_type_details_step_state.dart';
 part 'event_post_wizard_state/extra_details_step_state.dart';
 
+part '../utils_services/event_preview.dart';
+
+
 
 class EventPostWizardScreen extends StatefulWidget {
   const EventPostWizardScreen({super.key});
@@ -345,13 +348,68 @@ class _ExtraDetailsStep extends StatefulWidget {
 
 
 class _UploadStep extends StatelessWidget {
+  const _UploadStep();
+
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Upload media and confirm',
-        style: TextStyle(fontSize: 18),
-      ),
+    final controller = context.watch<EventPostWizardController>();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Preview & Upload',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // Event Preview Card
+        if (controller.canBuildEvent)
+          EventPreviewCard(
+            event: controller.buildEventDuration(),
+          )
+        else
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'Unable to build preview. Please complete required fields.',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ),
+        
+        const SizedBox(height: 24),
+        
+        // Media upload section
+        const Text(
+          'Upload Media (Optional)',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () {
+            try {
+              // TODO: Implement media picker
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Not implemented yet')),
+              );
+            }
+            catch (e) {return;}
+          },
+          icon: const Icon(Icons.add_photo_alternate),
+          label: const Text('Add Photos/Videos'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          ),
+        ),
+      ],
     );
   }
 }
