@@ -23,7 +23,7 @@ part 'event_post_wizard_state/extra_details_step_state.dart';
 
 part '../utils_services/event_builder.dart';
 part '../utils_services/event_preview.dart';
-// part '../utils_services/event_serializer.dart';
+part '../utils_services/event_serializer.dart';
 part '../utils_services/formsections.dart';
 part '../utils_services/step_validator.dart';
 
@@ -403,7 +403,7 @@ class _UploadStep extends StatelessWidget {
             try {
               // TODO: Implement media picker
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Not implemented yet')),
+                const SnackBar(content: Text('Not implemented (yet)')),
               );
             }
             catch (e) {return;}

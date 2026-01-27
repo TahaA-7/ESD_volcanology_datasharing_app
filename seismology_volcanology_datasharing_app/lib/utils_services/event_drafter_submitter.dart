@@ -1,39 +1,88 @@
+import '../screens/event_post_wizard.dart';
 import '../models/event_post_model.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 
+abstract class EventRepository {
+  Future<void> save(Event event, {bool draft = false});
+  Future<List<Event>> loadAll({bool draftsOnly = false});
+  Future<Event?> loadById(String id);
+  Future<void> delete(String id);
+}
 
-class EventSubmissionService {
-  Future<void> submit(Event event, {bool draft=false}) async {
+class JsonFileEventRepository implements EventRepository {
+  final String _filename = 'events.json';
+  
+  Future<File> _getFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/$_filename');
+  }
+  
+  Future<List<dynamic>> _loadEventsFromFile() async {
+    final file = await _getFile();
+    if (!await file.exists()) return [];
+    
+    final content = await file.readAsString();
+    if (content.isEmpty) return [];
+    
+    return jsonDecode(content) as List<dynamic>;
+  }
+  
+  @override
+  Future<void> save(Event event, {bool draft = false}) async {
+    final file = await _getFile();
+    final events = await _loadEventsFromFile();
+    
+    final eventJson = _serializeEvent(event, draft: draft);
+    
+    // Update existing event or add new one
+    final existingIndex = events.indexWhere((e) => e['id'] == event.id);
+    if (existingIndex != -1) {
+      events[existingIndex] = eventJson;
+    } else {
+      events.add(eventJson);
+    }
+    
+    await file.writeAsString(jsonEncode(events), mode: FileMode.write);
+  }
+  
+  @override
+  Future<List<Event>> loadAll({bool draftsOnly = false}) async {
+    final events = await _loadEventsFromFile();
+    
+    return events
+        .where((json) => !draftsOnly || json['draftBool'] == true)
+        .map((json) => _deserializeEvent(json))
+        .whereType<Event>()
+        .toList();
+  }
+  
+  @override
+  Future<Event?> loadById(String id) async {
+    final events = await _loadEventsFromFile();
+    
     try {
-      final Map<String, dynamic> eventJson = _toJson(event, draft: draft);
-      // final File file = File('../events.json');
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/events.json');
-      print('File saved in: ${directory.path}');
-
-      // Load existing events, if none create new dataset
-      List<dynamic> currentEvents = [];
-      if (await file.exists()) {
-        final String content = await file.readAsString();
-        if (content.isNotEmpty) {
-          currentEvents = jsonDecode(content);
-        }
-      }
-
-      // Add and save
-      currentEvents.add(eventJson);
-      await file.writeAsString(jsonEncode(currentEvents), mode: FileMode.write);
-      
+      final eventJson = events.firstWhere((e) => e['id'] == id);
+      return _deserializeEvent(eventJson);
     } catch (e) {
-      throw Exception("Error saving event: $e");
+      return null;
     }
   }
-
-   Map<String, dynamic> _toJson(Event event, {bool draft=false}) {
-    final Map<String, dynamic> baseData = {
+  
+  @override
+  Future<void> delete(String id) async {
+    final file = await _getFile();
+    final events = await _loadEventsFromFile();
+    
+    events.removeWhere((e) => e['id'] == id);
+    await file.writeAsString(jsonEncode(events), mode: FileMode.write);
+  }
+  
+  Map<String, dynamic> _serializeEvent(Event event, {bool draft = false}) {
+    final baseData = {
       'id': event.id,
       'eventType': event.eventType.name,
       'country': event.country.name,
@@ -41,7 +90,6 @@ class EventSubmissionService {
       'townCity': event.townCity,
       'longitude': event.longitude,
       'latitude': event.latitude,
-      // 'duration': event.duration,
       'duration_ms': event.duration.inMilliseconds,
       'startTime': event.startTime?.toIso8601String(),
       'timeRange': event.timeRange != null
@@ -50,45 +98,58 @@ class EventSubmissionService {
               'end': event.timeRange!.end.toIso8601String(),
             }
           : null,
-
       'draftBool': draft,
     };
-
-    final Map<String, dynamic> specificData = switch (event) {
-      EventAnthropogenic e => {'activityType': e.activityType, 'explosiveYieldKg': e.explosiveYieldKg, 'isConfirmedIntentional': e.isConfirmedIntentional,},
-      EventAtmospheric e => {'phenomenon': e.phenomenon, 'peakOverPressurePa': e.peakOverpressurePa,
-        'altitudeKm': e.altitudeKm, 'estimatedEnergyJoules': e.estimatedEnergyJoules,},
-      EventCryoseismic e => {'iceThicknessMeters': e.iceThicknessMeters, 'airTemperatureCelsius': e.airTemperatureCelsius,
-        'glacierIceBodyName': e.glacierIceBodyName, 'crackLengthMeters': e.crackLengthMeters,},
-      EventGeodetic e => {'displacementNorthMm': e.displacementNorthMm, 'displacementEastMm': e.displacementEastMm,
-        'displacementVerticalMm': e.displacementVerticalMm, 'instrumentType': e.instrumentType,},
-      EventHydrothermal e => {'featureType': e.featureType, 'waterTemperatureCelsius': e.waterTemperatureCelsius, 'phLevel': e.phLevel,
-        'dischargeRateLitersPerSec': e.dischargeRateLitersPerSec, 'eruptionOccured': e.eruptionOccurred,},
-      EventMassMovement e => {'volumeM3': e.volumeM3, 'velocityMetersPerSecond': e.velocityMetersPerSecond,
-        'runoutDistanceMeters': e.runoutDistanceMeters, 'slopeAngleDegrees': e.slopeAngleDegrees, 'trigger': e.trigger, 
-        'secondaryHazard': e.secondaryHazard,},
-      EventSeismic e => {'magnitude': e.magnitude, 'magnitudeType': e.magnitudeType, 'depth': e.depth,
-        'depthUncertainty': e.depthUncertainty, 'focalMechanism': e.focalMechanism},
-      EventVolcanicEruptive e => {
-        'volcanoName': e.volcanoName,
-        'elevation': e.elevation,
-        'eventSubtype': e.eventSubtype.name,
-        'plumeHeightMeters': e.plumeHeightMeters,
-        'vei': e.vei,
-        'hazards': e.hazards,
-      },
-      EventVolcanicNonEruptive e => {
-        'volcanoName': e.volcanoName,
-        'elevation': e.elevation,
-        'eventSubtype': e.eventSubtype.name,
-        'groundDeformationMm': e.groundDeformationMm,
-        'so2Flux': e.so2Flux,
-        'fumaroleTemperature': e.fumaroleTemperature,
-      },
-      // otherwise it won't compile because of _EventVolcanic...
-      _ => {}
-    };
-
+    
+    final serializer = EventSerializerRegistry.getSerializer(event.eventType);
+    final specificData = serializer.serializeSpecific(event as dynamic);
+    
     return {...baseData, ...specificData};
-   }
+  }
+  
+  Event? _deserializeEvent(Map<String, dynamic> json) {
+    try {
+      final eventTypeStr = json['eventType'] as String;
+      final eventType = EventType.values.firstWhere(
+        (e) => e.name == eventTypeStr,
+        orElse: () => EventType.unspecified_anomalous,
+      );
+      
+      final serializer = EventSerializerRegistry.getSerializer(eventType);
+      return serializer.deserialize(json);
+    } 
+    catch (e) {
+      print('Error deserializing event: $e');
+      return null;
+    }
+  }
+}
+
+
+class EventSubmissionService {
+  final JsonFileEventRepository _repository = JsonFileEventRepository();
+  
+  Future<void> submit(Event event, {bool draft = false}) async {
+    try {
+      await _repository.save(event, draft: draft);
+      
+      final directory = await getApplicationDocumentsDirectory();
+      print('Event saved in: ${directory.path}');
+    } 
+    catch (e) {
+      throw Exception("Error saving event: $e");
+    }
+  }
+  
+  Future<List<Event>> loadDrafts() async {
+    return await _repository.loadAll(draftsOnly: true);
+  }
+  
+  Future<List<Event>> loadAllEvents() async {
+    return await _repository.loadAll(draftsOnly: false);
+  }
+  
+  Future<void> deleteEvent(String id) async {
+    await _repository.delete(id);
+  }
 }

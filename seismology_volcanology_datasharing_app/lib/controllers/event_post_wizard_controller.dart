@@ -188,6 +188,8 @@ class EventPostWizardController extends ChangeNotifier {
     eventSubtype = null;
     location.reset();
     durationTime.reset();
+    // eventDetails.reset();
+    // extraDetails.reset();
     mediaPaths = null;
     _currentDraft = null;
     notifyListeners();
