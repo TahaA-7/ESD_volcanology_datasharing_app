@@ -19,11 +19,11 @@ class _BasicDetailsStepLocationState extends State<_BasicDetailsStepLocation> {
   void _initializeControllers() {
     final controller = context.read<EventPostWizardController>();
     
-    _stateprovinceController.text = controller.stateprovince ?? '';
-    _towncityController.text = controller.towncity ?? '';
+    _stateprovinceController.text = controller.location.stateprovince ?? '';
+    _towncityController.text = controller.location.towncity ?? '';
 
-    if (controller.latitude != null && controller.longitude != null) {
-      _selectedLocation = LatLng(controller.latitude!, controller.longitude!);
+    if (controller.location.latitude != null && controller.location.longitude != null) {
+      _selectedLocation = LatLng(controller.location.latitude!, controller.location.longitude!);
     }
 
     _longitudeController.text = _selectedLocation.longitude.toStringAsFixed(6);
@@ -45,8 +45,8 @@ class _BasicDetailsStepLocationState extends State<_BasicDetailsStepLocation> {
       _latitudeController.text = location.latitude.toStringAsFixed(6);
     });
     
-    controller.longitude = location.longitude;
-    controller.latitude = location.latitude;
+    controller.location.longitude = location.longitude;
+    controller.location.latitude = location.latitude;
     controller.notifyListeners();
   }
 
@@ -61,8 +61,8 @@ class _BasicDetailsStepLocationState extends State<_BasicDetailsStepLocation> {
         _mapController.move(_selectedLocation, _mapController.camera.zoom);
       });
       
-      controller.longitude = lon;
-      controller.latitude = lat;
+      controller.location.longitude = lon;
+      controller.location.latitude = lat;
       controller.notifyListeners();
     }
   }
@@ -89,9 +89,9 @@ class _BasicDetailsStepLocationState extends State<_BasicDetailsStepLocation> {
         ),
         const SizedBox(height: 8),
         CountrySelectionDropdown(
-          value: controller.country,
+          value: controller.location.country,
           onChanged: (Country? value) {
-            controller.country = value ?? Country.unspecified;
+            controller.location.country = value ?? Country.unspecified;
             controller.notifyListeners();
           },
         ),
@@ -108,7 +108,7 @@ class _BasicDetailsStepLocationState extends State<_BasicDetailsStepLocation> {
             ),
           ),
           onSubmitted: (value) {
-            controller.stateprovince = value;
+            controller.location.stateprovince = value;
             controller.notifyListeners();
           },
         ),
@@ -125,7 +125,7 @@ class _BasicDetailsStepLocationState extends State<_BasicDetailsStepLocation> {
             ),
           ),
           onSubmitted: (value) {
-            controller.towncity = value;
+            controller.location.towncity = value;
             controller.notifyListeners();
           },
         ),

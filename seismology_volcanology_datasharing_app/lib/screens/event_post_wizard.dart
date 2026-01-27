@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 // import '../utils_services/event_builder.dart';
 
 import '../models/event_post_model.dart';
-import '../controllers/event_post_wizard_controller.dart';
+// import '../controllers/event_post_wizard_controller.dart';
 import '../utils_services/event_drafter_submitter.dart';
 import '../utils_services/stringformatter_validator.dart';
 import '../widgets/date_time_picker_field.dart';
@@ -21,8 +21,13 @@ part 'event_post_wizard_state/basic_details_step_time_state.dart';
 part 'event_post_wizard_state/event_type_details_step_state.dart';
 part 'event_post_wizard_state/extra_details_step_state.dart';
 
+part '../utils_services/event_builder.dart';
 part '../utils_services/event_preview.dart';
+// part '../utils_services/event_serializer.dart';
+part '../utils_services/formsections.dart';
+part '../utils_services/step_validator.dart';
 
+part '../controllers/event_post_wizard_controller.dart';
 
 
 class EventPostWizardScreen extends StatefulWidget {

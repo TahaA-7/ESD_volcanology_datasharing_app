@@ -1,35 +1,24 @@
-import 'package:flutter/material.dart';
-
-import '../models/event_post_model.dart';
-
-import '../utils_services/event_builder.dart';
+part of '../screens/event_post_wizard.dart';
 
 class EventPostWizardController extends ChangeNotifier {
+  final List<StepValidator> _stepValidators = [
+    BasicDetailsValidator(),      // Step 0
+    LocationValidator(),           // Step 1
+    TimeRangeValidator(),         // Step 2
+    EventTypeDetailsValidator(),  // Step 3
+    ExtraDetailsValidator(),      // Step 4
+    UploadValidator(),            // Step 5
+  ];
+
+  final LocationSection location = LocationSection();
+  final TimeSection durationTime = TimeSection();
+
   int currentStep = 0;
 
   // Step 1
   EventType? eventType;
   Enum? eventSubtype;
 
-
-  // Step 1.1 – location
-  Country? country;
-  String? stateprovince;
-  String? towncity;
-  double? longitude;
-  double? latitude;
-
-  // Step 1.2 – duration
-  String? years;
-  String? days;
-  String? hours;
-  String? minutes;
-  String? seconds;
-  String? microseconds;
-
-  // Step 1.2 – absolute time
-  DateTime? startTime;
-  DateTime? endTime;
 
   // Step 2 - event type details
   String? activityType;
@@ -106,19 +95,19 @@ class EventPostWizardController extends ChangeNotifier {
     Event event = buildEvent(eventType!, eventSubtype!);
 
     // Apply location data
-    event.country = country ?? Country.unspecified;
-    event.stateProvince = stateprovince ?? '';
-    event.townCity = towncity ?? '';
-    event.longitude = longitude;
-    event.latitude = latitude;
+    event.country = location.country ?? Country.unspecified;
+    event.stateProvince = location.stateprovince ?? '';
+    event.townCity = location.towncity ?? '';
+    event.longitude = location.longitude;
+    event.latitude = location.latitude;
 
     // Parse and apply duration
-    final durationYears = int.tryParse(years ?? '0') ?? 0;
-    final durationDays = int.tryParse(days ?? '0') ?? 0;
-    final durationHours = int.tryParse(hours ?? '0') ?? 0;
-    final durationMinutes = int.tryParse(minutes ?? '0') ?? 0;
-    final durationSeconds = int.tryParse(seconds ?? '0') ?? 0;
-    final durationMicroseconds = int.tryParse(microseconds ?? '0') ?? 0;
+    final durationYears = int.tryParse(durationTime.years ?? '0') ?? 0;
+    final durationDays = int.tryParse(durationTime.days ?? '0') ?? 0;
+    final durationHours = int.tryParse(durationTime.hours ?? '0') ?? 0;
+    final durationMinutes = int.tryParse(durationTime.minutes ?? '0') ?? 0;
+    final durationSeconds = int.tryParse(durationTime.seconds ?? '0') ?? 0;
+    final durationMicroseconds = int.tryParse(durationTime.microseconds ?? '0') ?? 0;
 
     event.duration = Duration(
       days: durationYears * 365 + durationDays,
@@ -129,9 +118,9 @@ class EventPostWizardController extends ChangeNotifier {
     );
 
     // Apply time range
-    event.startTime = startTime;
-    if (startTime != null && endTime != null) {
-      event.timeRange = DateTimeRange(start: startTime!, end: endTime!);
+    event.startTime = durationTime.startTime;
+    if (durationTime.startTime != null && durationTime.endTime != null) {
+      event.timeRange = DateTimeRange(start: durationTime.startTime!, end: durationTime.endTime!);
     }
 
     return event;
@@ -155,28 +144,20 @@ class EventPostWizardController extends ChangeNotifier {
 
   // ---- Validation ----
 
-  bool get isTimeRangeValid {
-    if (startTime == null || endTime == null) return true;
-    return !startTime!.isAfter(endTime!);
+  bool get canProceed {
+    return _stepValidators[currentStep].validate(this);
   }
 
-  bool get canProceed {
-    switch (currentStep) {
-      case 0:
-        return eventType != null;
-      case 2:
-        return isTimeRangeValid;
-      default:
-        return true;
-    }
+  String? get currentStepError {
+    return _stepValidators[currentStep].getErrorMessage(this);
   }
 
   bool get canBuildEvent {
     if (eventType != null){
-      if (longitude != null && latitude != null) {
+      if (location.longitude != null && location.latitude != null) {
         return true;
       }
-      if (stateprovince != null) {return true;}
+      if (location.stateprovince != null) {return true;}
     }
     return false;
   }
@@ -205,19 +186,8 @@ class EventPostWizardController extends ChangeNotifier {
     currentStep = 0;
     eventType = null;
     eventSubtype = null;
-    country = null;
-    stateprovince = null;
-    towncity = null;
-    longitude = null;
-    latitude = null;
-    years = null;
-    days = null;
-    hours = null;
-    minutes = null;
-    seconds = null;
-    microseconds = null;
-    startTime = null;
-    endTime = null;
+    location.reset();
+    durationTime.reset();
     mediaPaths = null;
     _currentDraft = null;
     notifyListeners();

@@ -17,12 +17,12 @@ class _BasicDetailsStepTimeState extends State<_BasicDetailsStepTime> {
   void _initializeControllers() {
     final controller = context.read<EventPostWizardController>();
 
-    _yearsController.text = controller.years ?? '';
-    _daysController.text = controller.days ?? '';
-    _hoursController.text = controller.hours ?? '';
-    _minutesController.text = controller.minutes ?? '';
-    _secondsController.text = controller.seconds ?? '';
-    _microsecondsController.text = controller.microseconds ?? '';
+    _yearsController.text = controller.durationTime.years ?? '';
+    _daysController.text = controller.durationTime.days ?? '';
+    _hoursController.text = controller.durationTime.hours ?? '';
+    _minutesController.text = controller.durationTime.minutes ?? '';
+    _secondsController.text = controller.durationTime.seconds ?? '';
+    _microsecondsController.text = controller.durationTime.microseconds ?? '';
   }
   @override
   void dispose() {
@@ -60,7 +60,7 @@ class _BasicDetailsStepTimeState extends State<_BasicDetailsStepTime> {
           ),
           onSubmitted: (value) {
             if (value.isNumeric && value.isLessThan(101)) {
-              controller.years = value;
+              controller.durationTime.years = value;
               controller.notifyListeners();
             }
           },
@@ -79,7 +79,7 @@ class _BasicDetailsStepTimeState extends State<_BasicDetailsStepTime> {
           ),
           onSubmitted: (value) {
             if (value.isLessThan(365)) {
-              controller.days = value;
+              controller.durationTime.days = value;
               controller.notifyListeners();
             }
           },
@@ -98,7 +98,7 @@ class _BasicDetailsStepTimeState extends State<_BasicDetailsStepTime> {
           ),
           onSubmitted: (value) {
             if (value.isLessThan(24)) {
-              controller.hours = value;
+              controller.durationTime.hours = value;
               controller.notifyListeners();
             }
           },
@@ -117,7 +117,7 @@ class _BasicDetailsStepTimeState extends State<_BasicDetailsStepTime> {
           ),
           onSubmitted: (value) {
             if (value.isLessThan(60)) {
-              controller.minutes = value;
+              controller.durationTime.minutes = value;
               controller.notifyListeners();
             }
           },
@@ -136,7 +136,7 @@ class _BasicDetailsStepTimeState extends State<_BasicDetailsStepTime> {
           ),
           onSubmitted: (value) {
             if (value.isLessThan(60)) {
-              controller.seconds = value;
+              controller.durationTime.seconds = value;
               controller.notifyListeners();
             }
           },
@@ -155,7 +155,7 @@ class _BasicDetailsStepTimeState extends State<_BasicDetailsStepTime> {
           ),
           onSubmitted: (value) {
             if (value.isLessThan(1000000)) {
-              controller.microseconds = value;
+              controller.durationTime.microseconds = value;
               controller.notifyListeners();
             }
           },
@@ -163,20 +163,20 @@ class _BasicDetailsStepTimeState extends State<_BasicDetailsStepTime> {
         const SizedBox(height: 8),
         DateTimePickerField(
           label: 'start time',
-          value: controller.startTime,
-          isError: !controller.isTimeRangeValid,
+          value: controller.durationTime.startTime,
+          isError: TimeRangeValidator().validate(controller),  // test whether this works as expected
           onChanged: (dt) {
-            controller.startTime = dt;
+            controller.durationTime.startTime = dt;
             controller.notifyListeners();
           },
         ),
         const SizedBox(height: 8),
         DateTimePickerField(
           label: 'end time',
-          value: controller.endTime,
-          isError: !controller.isTimeRangeValid,
+          value: controller.durationTime.endTime,
+          isError: TimeRangeValidator().validate(controller),  // test whether this works as expected
           onChanged: (dt) {
-            controller.endTime = dt;
+            controller.durationTime.endTime = dt;
             controller.notifyListeners();
           },
         ),

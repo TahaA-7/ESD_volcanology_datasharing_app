@@ -1,4 +1,4 @@
-import '../models/event_post_model.dart';
+part of '../screens/event_post_wizard.dart';
 
 // EventType? selectedType;
 // Enum? selectedSubtype;

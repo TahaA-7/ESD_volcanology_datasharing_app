@@ -3,11 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
-class EventDraftService {
-  // Event buildPreview(Event draft) { ... }
 
-  // Event loadDraft() { ... }
-}
 
 class EventSubmissionService {
   Future<void> submit(Event event, {bool draft=false}) async {
@@ -59,15 +55,20 @@ class EventSubmissionService {
     };
 
     final Map<String, dynamic> specificData = switch (event) {
-      EventAnthropogenic e => {'activityType': e.activityType, 'explosiveYieldKg': e.explosiveYieldKg,},
-      EventAtmospheric e => {'phenomenon': e.phenomenon, 'peakOverPressurePa': e.peakOverpressurePa,},
-      EventCryoseismic e => {'iceThicknessMeters': e.iceThicknessMeters, 
-        'airTemperatureCelsius': e.airTemperatureCelsius,},
-      EventGeodetic e => {'displacementNorthMm': e.displacementNorthMm, 
-        'displacementEastMm': e.displacementEastMm,},
-      EventHydrothermal e => {'featureType': e.featureType, 'waterTemperatureCelsius': e.waterTemperatureCelsius,},
-      EventMassMovement e => {'volumeM3': e.volumeM3, 'velocityMetersPerSecond': e.velocityMetersPerSecond,},
-      EventSeismic e => {'magnitude': e.magnitude, 'depth': e.depth,},
+      EventAnthropogenic e => {'activityType': e.activityType, 'explosiveYieldKg': e.explosiveYieldKg, 'isConfirmedIntentional': e.isConfirmedIntentional,},
+      EventAtmospheric e => {'phenomenon': e.phenomenon, 'peakOverPressurePa': e.peakOverpressurePa,
+        'altitudeKm': e.altitudeKm, 'estimatedEnergyJoules': e.estimatedEnergyJoules,},
+      EventCryoseismic e => {'iceThicknessMeters': e.iceThicknessMeters, 'airTemperatureCelsius': e.airTemperatureCelsius,
+        'glacierIceBodyName': e.glacierIceBodyName, 'crackLengthMeters': e.crackLengthMeters,},
+      EventGeodetic e => {'displacementNorthMm': e.displacementNorthMm, 'displacementEastMm': e.displacementEastMm,
+        'displacementVerticalMm': e.displacementVerticalMm, 'instrumentType': e.instrumentType,},
+      EventHydrothermal e => {'featureType': e.featureType, 'waterTemperatureCelsius': e.waterTemperatureCelsius, 'phLevel': e.phLevel,
+        'dischargeRateLitersPerSec': e.dischargeRateLitersPerSec, 'eruptionOccured': e.eruptionOccurred,},
+      EventMassMovement e => {'volumeM3': e.volumeM3, 'velocityMetersPerSecond': e.velocityMetersPerSecond,
+        'runoutDistanceMeters': e.runoutDistanceMeters, 'slopeAngleDegrees': e.slopeAngleDegrees, 'trigger': e.trigger, 
+        'secondaryHazard': e.secondaryHazard,},
+      EventSeismic e => {'magnitude': e.magnitude, 'magnitudeType': e.magnitudeType, 'depth': e.depth,
+        'depthUncertainty': e.depthUncertainty, 'focalMechanism': e.focalMechanism},
       EventVolcanicEruptive e => {
         'volcanoName': e.volcanoName,
         'elevation': e.elevation,

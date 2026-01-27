@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/event_post_model.dart';
-import '../controllers/event_post_wizard_controller.dart';
+// import '../controllers/event_post_wizard_controller.dart';
 import '../screens/event_post_wizard.dart';
 
 class EventPostLandingScreen extends StatelessWidget {
@@ -240,33 +240,33 @@ class _DraftsListScreenState extends State<DraftsListScreen> {
       orElse: () => EventType.unspecified_anomalous,
     );
     
-    controller.country = Country.values.firstWhere(
+    controller.location.country = Country.values.firstWhere(
       (e) => e.name == draftData['country'],
       orElse: () => Country.unspecified,
     );
     
-    controller.stateprovince = draftData['stateProvince'];
-    controller.towncity = draftData['townCity'];
-    controller.longitude = draftData['longitude'];
-    controller.latitude = draftData['latitude'];
+    controller.location.stateprovince = draftData['stateProvince'];
+    controller.location.towncity = draftData['townCity'];
+    controller.location.longitude = draftData['longitude'];
+    controller.location.latitude = draftData['latitude'];
     
     // Load time data
     if (draftData['startTime'] != null) {
-      controller.startTime = DateTime.parse(draftData['startTime']);
+      controller.durationTime.startTime = DateTime.parse(draftData['startTime']);
     }
     
     if (draftData['timeRange'] != null) {
-      controller.startTime = DateTime.parse(draftData['timeRange']['start']);
-      controller.endTime = DateTime.parse(draftData['timeRange']['end']);
+      controller.durationTime.startTime = DateTime.parse(draftData['timeRange']['start']);
+      controller.durationTime.endTime = DateTime.parse(draftData['timeRange']['end']);
     }
     
     // Load duration
     if (draftData['duration_ms'] != null) {
       final duration = Duration(milliseconds: draftData['duration_ms']);
-      controller.days = duration.inDays.toString();
-      controller.hours = (duration.inHours % 24).toString();
-      controller.minutes = (duration.inMinutes % 60).toString();
-      controller.seconds = (duration.inSeconds % 60).toString();
+      controller.durationTime.days = duration.inDays.toString();
+      controller.durationTime.hours = (duration.inHours % 24).toString();
+      controller.durationTime.minutes = (duration.inMinutes % 60).toString();
+      controller.durationTime.seconds = (duration.inSeconds % 60).toString();
     }
     
     // Navigate to wizard

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../controllers/event_post_wizard_controller.dart';
+import '../screens/event_post_wizard.dart';
 import '../models/event_post_model.dart';
-import '../utils_services/event_builder.dart';
+// import '../utils_services/event_builder.dart';
 import '../utils_services/stringformatter_validator.dart';
 
 class _DropdownField extends StatelessWidget {

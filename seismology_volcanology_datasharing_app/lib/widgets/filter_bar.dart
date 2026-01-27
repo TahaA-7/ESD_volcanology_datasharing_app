@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:seismology_volcanology_datasharing_app/screens/event_post_landing_screen.dart';
-import '../controllers/event_post_wizard_controller.dart';
+// import '../controllers/event_post_wizard_controller.dart';
 import '../screens/event_post_wizard.dart';
 
 class FilterBar extends StatefulWidget {
