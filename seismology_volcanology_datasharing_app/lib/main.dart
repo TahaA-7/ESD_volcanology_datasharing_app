@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'screens/timeline.dart';
+import 'utils_services/mock_data_updater.dart';
 
-void main() {
+void main() async {
+  // Ensure Flutter binding is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Update mock data with recent timestamps if needed
+  if (await MockDataUpdater.shouldUpdateMockData()) {
+    await MockDataUpdater.updateMockDataTimestamps();
+  }
+  
   runApp(const MyApp());
 }
 

@@ -46,7 +46,8 @@ class JsonFileEventRepository implements EventRepository {
       events.add(eventJson);
     }
     
-    await file.writeAsString(jsonEncode(events), mode: FileMode.write);
+    const encoder = JsonEncoder.withIndent('  ');
+    await file.writeAsString(encoder.convert(events), mode: FileMode.write);
   }
   
   @override
