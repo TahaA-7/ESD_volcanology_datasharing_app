@@ -138,3 +138,32 @@ sealed class Event{
     };
   }
 }
+
+
+
+
+enum EventSubtypeMultisensor {
+  default_,
+}
+
+class EventMultisensor extends Event {
+  final EventSubtypeMultisensor eventSubtype;
+
+  EventMultisensor({
+    super.id, 
+    required this.eventSubtype,
+    }) : super(eventType: EventType.multiSensor);
+}
+
+enum EventSubtypeFalseTest {
+  default_,
+}
+
+class EventFalseTest extends Event {
+  final EventSubtypeFalseTest eventSubtype;
+
+  EventFalseTest({
+    super.id, 
+    required this.eventSubtype,
+    }) : super(eventType: EventType.false_test);
+}

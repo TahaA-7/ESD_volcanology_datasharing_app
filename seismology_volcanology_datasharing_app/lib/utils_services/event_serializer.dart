@@ -215,6 +215,31 @@ class VolcanicNonEruptiveEventSerializer extends EventSerializer<EventVolcanicNo
 }
 
 
+class MultisensorEventSerializer extends EventSerializer<EventMultisensor> {
+  @override
+  Map<String, dynamic> serializeSpecific(EventMultisensor event) {
+    return {};
+  }
+
+  @override
+  EventMultisensor deserialize(Map<String, dynamic> json) {
+    return EventMultisensor(eventSubtype: EventSubtypeMultisensor.default_);
+  }
+}
+
+class FalseTestEventSerializer extends EventSerializer<EventFalseTest> {
+  @override
+  Map<String, dynamic> serializeSpecific(EventFalseTest event) {
+    return {};
+  }
+
+  @override
+  EventFalseTest deserialize(Map<String, dynamic> json) {
+    return EventFalseTest(eventSubtype: EventSubtypeFalseTest.default_);
+  }
+}
+
+
 // Registry to map event types to serializers
 class EventSerializerRegistry {
   static final Map<EventType, EventSerializer> _serializers = {
@@ -227,6 +252,8 @@ class EventSerializerRegistry {
     EventType.massMovement_surfaceInstability: MassMovementEventSerializer(),
     EventType.volcanicEruptive_surfaceProcess: VolcanicEruptiveEventSerializer(),
     EventType.volcanicNonEruptive: VolcanicNonEruptiveEventSerializer(),
+    EventType.multiSensor: MultisensorEventSerializer(),
+    EventType.false_test: FalseTestEventSerializer(),
   };
   
   static EventSerializer getSerializer(EventType type) {

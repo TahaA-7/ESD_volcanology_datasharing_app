@@ -23,6 +23,10 @@ List<Enum> getAvailableSubtypesForType(EventType type) {
       return EventSubtypeVolcanicE.values;
     case EventType.volcanicNonEruptive:
       return EventSubtypeVolcanicNE.values;
+    case EventType.multiSensor:
+      return EventSubtypeMultisensor.values;
+    case EventType.false_test:
+      return EventSubtypeFalseTest.values;
     default:
       return [EventSubtype.unspecified];
       // return EventSubtype.values;
@@ -68,6 +72,10 @@ Event buildEvent(EventType eventType, Enum eventSubtype) {
       return EventVolcanicNonEruptive(
         eventSubtype: eventSubtype as EventSubtypeVolcanicNE,
       );
+    case EventType.multiSensor:
+      return EventMultisensor(eventSubtype: eventSubtype as EventSubtypeMultisensor);
+    case EventType.false_test:
+      return EventFalseTest(eventSubtype: eventSubtype as EventSubtypeFalseTest);
     default:
       throw UnsupportedError('Unknown event type: $eventType');
   }
