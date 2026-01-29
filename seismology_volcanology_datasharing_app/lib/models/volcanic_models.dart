@@ -28,9 +28,12 @@ enum EventSubtypeVolcanicNE {
   other,
 }
 
-class _EventVolcanic extends Event {
+abstract class _EventVolcanic extends Event {
   String volcanoName = "";
   double? elevation;
+
+  @override
+  Enum get eventSubtype;
 
   _EventVolcanic({super.id}) : super(eventType: EventType.unspecified_anomalous);
 }

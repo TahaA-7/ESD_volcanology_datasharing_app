@@ -15,8 +15,8 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
   void _initializeControllers() {
     final controller = context.read<EventPostWizardController>();
     
-    _sourceController.text = controller.source ?? '';
-    _descriptionBoxController.text = controller.description ?? '';
+    _sourceController.text = controller.extraDetails.source ?? '';
+    _descriptionBoxController.text = controller.extraDetails.description ?? '';
   }
 
   @override
@@ -39,9 +39,9 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
         ),
         const SizedBox(height: 8),
         EventPostStatusSelectionDropdown(
-          value: controller.eventPostStatus,
+          value: controller.extraDetails.eventPostStatus,
           onChanged: (EventPostStatus? value) {
-            controller.eventPostStatus = value ?? EventPostStatus.unspecified;
+            controller.extraDetails.eventPostStatus = value ?? EventPostStatus.unspecified;
             controller.notifyListeners();
           },
         ),
@@ -58,7 +58,7 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
             ),
           ),
           onSubmitted: (value) {
-            controller.source = value;
+            controller.extraDetails.source = value;
             controller.notifyListeners();
           },
         ),
@@ -75,7 +75,7 @@ class _ExtraDetailsStepState extends State<_ExtraDetailsStep> {
             ),
           ),
           onSubmitted: (value) {
-            controller.description = value;
+            controller.extraDetails.description = value;
             controller.notifyListeners();
           },
         ),

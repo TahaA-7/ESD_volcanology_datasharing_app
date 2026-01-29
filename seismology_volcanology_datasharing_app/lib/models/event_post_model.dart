@@ -75,6 +75,7 @@ sealed class Event{
   final EventType eventType;
   // EventType eventType = EventType.unspecified_anomalous;
   // EventSubtype eventSubtype = EventSubtype.unspecified;
+  Enum get eventSubtype;
   
   Country country = Country.unspecified;
   String stateProvince = "";
@@ -86,8 +87,8 @@ sealed class Event{
   DateTime? startTime;
   DateTimeRange? timeRange;
  
-  String source = "";  // or recording station
   EventPostStatus status = EventPostStatus.unspecified;
+  String source = "";  // or recording station
   String description = "";
 
   bool draft = true;
@@ -166,4 +167,13 @@ class EventFalseTest extends Event {
     super.id, 
     required this.eventSubtype,
     }) : super(eventType: EventType.false_test);
+}
+
+class EventUnspecified extends Event {
+  final EventSubtype eventSubtype;
+
+  EventUnspecified({
+    super.id,
+    required this.eventSubtype,
+  }) : super(eventType: EventType.unspecified_anomalous);
 }

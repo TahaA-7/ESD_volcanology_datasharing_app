@@ -74,55 +74,55 @@ class EventTypeDetailsValidator extends StepValidator {  // extend
   bool validate(EventPostWizardController controller){
     switch (controller.eventType) {
       case EventType.anthropogenic:
-        if (_isValidDouble(controller.explosiveYieldKg) == false) return false;
-        if (_isValidBool(controller.isConfirmedIntentional) == false) return false;
+        if (_isValidDouble(controller.anthropogenic.explosiveYieldKg) == false) return false;
+        if (_isValidBool(controller.anthropogenic.isConfirmedIntentional) == false) return false;
         return true;
       case EventType.atmospheric_coupledSignals:
-        if (_isValidDouble(controller.peakOverpressurePa) == false) return false;
-        if (_isValidDouble(controller.altitudeKm) == false) return false;
-        if (_isValidDouble(controller.estimatedEnergyJoules) == false) return false;
+        if (_isValidDouble(controller.atmospheric.peakOverpressurePa) == false) return false;
+        if (_isValidDouble(controller.atmospheric.altitudeKm) == false) return false;
+        if (_isValidDouble(controller.atmospheric.estimatedEnergyJoules) == false) return false;
         return true;
       case EventType.cryoseismic_glacial:
-        if (_isValidDouble(controller.iceThicknessMeters) == false) return false;
-        if (_isValidDouble(controller.airTemperatureCelsius) == false) return false;
-        if (_isValidDouble(controller.crackLengthMeters) == false) return false;
+        if (_isValidDouble(controller.cryoseismic.iceThicknessMeters) == false) return false;
+        if (_isValidDouble(controller.cryoseismic.airTemperatureCelsius) == false) return false;
+        if (_isValidDouble(controller.cryoseismic.crackLengthMeters) == false) return false;
         return true;
       case EventType.geodetic_deformation:
-        if (_isValidDouble(controller.displacementNorthMm) == false) return false;
-        if (_isValidDouble(controller.displacementEastMm) == false) return false;
-        if (_isValidDouble(controller.displacementVerticalMm) == false) return false;
+        if (_isValidDouble(controller.geodetic.displacementNorthMm) == false) return false;
+        if (_isValidDouble(controller.geodetic.displacementEastMm) == false) return false;
+        if (_isValidDouble(controller.geodetic.displacementVerticalMm) == false) return false;
         return true;
       case EventType.hydrothermal_fluidDriven:
-        if (_isValidDouble(controller.waterTemperatureCelsius) == false) return false;
-        if (_isValidDouble(controller.phLevel) == false) return false;
-        if (_isValidDouble(controller.dischargeRateLitersPerSec) == false) return false;
-        if (_isValidBool(controller.eruptionOccurred) == false) return false;
+        if (_isValidDouble(controller.hydrothermal.waterTemperatureCelsius) == false) return false;
+        if (_isValidDouble(controller.hydrothermal.phLevel) == false) return false;
+        if (_isValidDouble(controller.hydrothermal.dischargeRateLitersPerSec) == false) return false;
+        if (_isValidBool(controller.hydrothermal.eruptionOccurred) == false) return false;
         return true;
       case EventType.massMovement_surfaceInstability:
-        if (_isValidDouble(controller.volcanoName) == false) return false;
-        if (_isValidDouble(controller.velocityMetersPerSecond) == false) return false;
-        if (_isValidDouble(controller.runoutDistanceMeters) == false) return false;
-        if (_isValidDouble(controller.slopeAngleDegrees) == false) return false;
-        if (_isValidBool(controller.secondaryHazard) == false) return false;
+        if (_isValidDouble(controller.massMovement.volumeM3) == false) return false;
+        if (_isValidDouble(controller.massMovement.velocityMetersPerSecond) == false) return false;
+        if (_isValidDouble(controller.massMovement.runoutDistanceMeters) == false) return false;
+        if (_isValidDouble(controller.massMovement.slopeAngleDegrees) == false) return false;
+        if (_isValidBool(controller.massMovement.secondaryHazard) == false) return false;
         return true;
       case EventType.seismic_tectonic:
-        if (_isValidDouble(controller.magnitude) == false) return false;
-        if (_isValidDouble(controller.magnitudeType) == false) return false;
-        if (_isValidDouble(controller.depth) == false) return false;
-        if (_isValidDouble(controller.depthUncertainty) == false) return false;
+        if (_isValidDouble(controller.seismic.magnitude) == false) return false;
+        if (_isValidDouble(controller.seismic.magnitudeType) == false) return false;
+        if (_isValidDouble(controller.seismic.depth) == false) return false;
+        if (_isValidDouble(controller.seismic.depthUncertainty) == false) return false;
         return true;
       case EventType.volcanicEruptive_surfaceProcess:
-        if (_isValidDouble(controller.elevation) == false) return false;
+        if (_isValidDouble(controller.volcanicEruptive.elevation) == false) return false;
 
-        if (_isValidDouble(controller.plumeHeightMeters) == false) return false;
-        if (_isValidInt(controller.vei) == false) return false;
+        if (_isValidDouble(controller.volcanicEruptive.plumeHeightMeters) == false) return false;
+        if (_isValidInt(controller.volcanicEruptive.vei) == false) return false;
         return true;
       case EventType.volcanicNonEruptive:
-        if (_isValidDouble(controller.elevation) == false) return false;
+        if (_isValidDouble(controller.volcanicNonEruptive.elevation) == false) return false;
 
-        if (_isValidDouble(controller.groundDeformationMm) == false) return false;
-        if (_isValidDouble(controller.so2Flux) == false) return false;
-        if (_isValidDouble(controller.fumaroleTemperature) == false) return false;
+        if (_isValidDouble(controller.volcanicNonEruptive.groundDeformationMm) == false) return false;
+        if (_isValidDouble(controller.volcanicNonEruptive.so2Flux) == false) return false;
+        if (_isValidDouble(controller.volcanicNonEruptive.fumaroleTemperature) == false) return false;
         return true;
       case _:
         return true;

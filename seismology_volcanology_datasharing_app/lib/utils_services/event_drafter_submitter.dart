@@ -86,6 +86,7 @@ class JsonFileEventRepository implements EventRepository {
     final baseData = {
       'id': event.id,
       'eventType': event.eventType.name,
+      'eventSubtype': event.eventSubtype.toString().split('.').last,  // The getter 'subtype' isn't defined for the type 'Event'. Try importing the library that defines 'subtype', correcting the name to the name of an existing getter, or defining a getter or field named 'subtype'.
       'country': event.country.name,
       'stateProvince': event.stateProvince,
       'townCity': event.townCity,
@@ -100,6 +101,9 @@ class JsonFileEventRepository implements EventRepository {
             }
           : null,
       'draftBool': draft,
+      'status': event.status.name,
+      'source': event.source,
+      'description': event.description,
     };
     
     final serializer = EventSerializerRegistry.getSerializer(event.eventType);

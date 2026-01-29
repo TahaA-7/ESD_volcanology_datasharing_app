@@ -235,16 +235,26 @@ class _DraftsListScreenState extends State<DraftsListScreen> {
     final controller = context.read<EventPostWizardController>();
     
     // Load basic data
-    controller.eventType = EventType.values.firstWhere(
-      (e) => e.name == draftData['eventType'],
+    // Deserialize event with serializer
+    final eventTypeStr = draftData['eventType'] as String;
+    final eventType = EventType.values.firstWhere(
+      (e) => e.name == eventTypeStr,
       orElse: () => EventType.unspecified_anomalous,
     );
+  
+    final serializer = EventSerializerRegistry.getSerializer(eventType);
+    final event = serializer.deserialize(draftData);
+  
+    // Populating controller from deserialized event
+    controller.eventType = event.eventType;
+    controller.eventSubtype = event.eventSubtype;
     
-    controller.location.country = Country.values.firstWhere(
-      (e) => e.name == draftData['country'],
-      orElse: () => Country.unspecified,
-    );
+    // controller.location.country = Country.values.firstWhere(
+    //   (e) => e.name == draftData['country'],
+    //   orElse: () => Country.unspecified,
+    // );
     
+    controller.location.country = event.country;
     controller.location.stateprovince = draftData['stateProvince'];
     controller.location.towncity = draftData['townCity'];
     controller.location.longitude = draftData['longitude'];
@@ -268,6 +278,14 @@ class _DraftsListScreenState extends State<DraftsListScreen> {
       controller.durationTime.minutes = (duration.inMinutes % 60).toString();
       controller.durationTime.seconds = (duration.inSeconds % 60).toString();
     }
+  
+    // Load extra details
+    controller.extraDetails.eventPostStatus = event.status;
+    controller.extraDetails.source = event.source;
+    controller.extraDetails.description = event.description;
+
+    // Load event-specific details
+    _loadEventSpecificDetails(controller, event);
     
     // Navigate to wizard
     Navigator.of(context).pushReplacement(
@@ -278,6 +296,90 @@ class _DraftsListScreenState extends State<DraftsListScreen> {
         ),
       ),
     );
+  }
+
+  void _loadEventSpecificDetails(EventPostWizardController controller, Event event) {
+    switch (event.eventType) {
+      case EventType.seismic_tectonic:
+        final e = event as EventSeismic;
+        controller.seismic.magnitude = e.magnitude?.toString();
+        controller.seismic.magnitudeType = e.magnitudeType?.toString();
+        controller.seismic.depth = e.depth?.toString();
+        controller.seismic.depthUncertainty = e.depthUncertainty?.toString();
+        controller.seismic.focalMechanism = e.focalMechanism;
+        break;
+        
+      case EventType.anthropogenic:
+        final e = event as EventAnthropogenic;
+        controller.anthropogenic.activityType = e.activityType;
+        controller.anthropogenic.explosiveYieldKg = e.explosiveYieldKg?.toString();
+        controller.anthropogenic.isConfirmedIntentional = e.isConfirmedIntentional?.toString();
+        break;
+        
+      case EventType.cryoseismic_glacial:
+        final e = event as EventCryoseismic;
+        controller.cryoseismic.iceThicknessMeters = e.iceThicknessMeters?.toString();
+        controller.cryoseismic.airTemperatureCelsius = e.airTemperatureCelsius?.toString();
+        controller.cryoseismic.glacierIceBodyName = e.glacierIceBodyName;
+        controller.cryoseismic.crackLengthMeters = e.crackLengthMeters?.toString();
+        break;
+        
+      case EventType.atmospheric_coupledSignals:
+        final e = event as EventAtmospheric;
+        controller.atmospheric.phenomenon = e.phenomenon;
+        controller.atmospheric.peakOverpressurePa = e.peakOverpressurePa?.toString();
+        controller.atmospheric.altitudeKm = e.altitudeKm?.toString();
+        controller.atmospheric.estimatedEnergyJoules = e.estimatedEnergyJoules?.toString();
+        break;
+        
+      case EventType.geodetic_deformation:
+        final e = event as EventGeodetic;
+        controller.geodetic.displacementNorthMm = e.displacementNorthMm?.toString();
+        controller.geodetic.displacementEastMm = e.displacementEastMm?.toString();
+        controller.geodetic.displacementVerticalMm = e.displacementVerticalMm?.toString();
+        controller.geodetic.instrumentType = e.instrumentType;
+        break;
+        
+      case EventType.hydrothermal_fluidDriven:
+        final e = event as EventHydrothermal;
+        controller.hydrothermal.featureType = e.featureType;
+        controller.hydrothermal.waterTemperatureCelsius = e.waterTemperatureCelsius?.toString();
+        controller.hydrothermal.phLevel = e.phLevel?.toString();
+        controller.hydrothermal.dischargeRateLitersPerSec = e.dischargeRateLitersPerSec?.toString();
+        controller.hydrothermal.eruptionOccurred = e.eruptionOccurred?.toString();
+        break;
+        
+      case EventType.massMovement_surfaceInstability:
+        final e = event as EventMassMovement;
+        controller.massMovement.volumeM3 = e.volumeM3?.toString();
+        controller.massMovement.velocityMetersPerSecond = e.velocityMetersPerSecond?.toString();
+        controller.massMovement.runoutDistanceMeters = e.runoutDistanceMeters?.toString();
+        controller.massMovement.slopeAngleDegrees = e.slopeAngleDegrees?.toString();
+        controller.massMovement.trigger = e.trigger;
+        controller.massMovement.secondaryHazard = e.secondaryHazard?.toString();
+        break;
+        
+      case EventType.volcanicEruptive_surfaceProcess:
+        final e = event as EventVolcanicEruptive;
+        controller.volcanicEruptive.volcanoName = e.volcanoName;
+        controller.volcanicEruptive.elevation = e.elevation?.toString();
+        controller.volcanicEruptive.plumeHeightMeters = e.plumeHeightMeters?.toString();
+        controller.volcanicEruptive.vei = e.vei?.toString();
+        controller.volcanicEruptive.hazards = e.hazards;
+        break;
+        
+      case EventType.volcanicNonEruptive:
+        final e = event as EventVolcanicNonEruptive;
+        controller.volcanicNonEruptive.volcanoName = e.volcanoName;
+        controller.volcanicNonEruptive.elevation = e.elevation?.toString();
+        controller.volcanicNonEruptive.groundDeformationMm = e.groundDeformationMm?.toString();
+        controller.volcanicNonEruptive.so2Flux = e.so2Flux?.toString();
+        controller.volcanicNonEruptive.fumaroleTemperature = e.fumaroleTemperature?.toString();
+        break;
+        
+      default:
+        break;
+    }
   }
 
   @override

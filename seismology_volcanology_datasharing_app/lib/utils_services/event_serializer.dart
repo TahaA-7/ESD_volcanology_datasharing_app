@@ -19,10 +19,19 @@ class AnthropogenicEventSerializer extends EventSerializer<EventAnthropogenic> {
   
   @override
   EventAnthropogenic deserialize(Map<String, dynamic> json) {
-    return EventAnthropogenic(eventSubtype: EventSubtypeAnthropogenic.other)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeAnthropogenic.values.byName(subtypeStr)
+        : EventSubtypeAnthropogenic.other;
+
+    final event = EventAnthropogenic(eventSubtype: subtype)
       ..activityType = json['activityType']
       ..explosiveYieldKg = json['explosiveYieldKg']
       ..isConfirmedIntentional = json['isConfirmedIntentional'];
+
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -40,11 +49,20 @@ class AtmosphericEventSerializer extends EventSerializer<EventAtmospheric> {
   
   @override
   EventAtmospheric deserialize(Map<String, dynamic> json) {
-    return EventAtmospheric(eventSubtype: EventSubtypeAtmospheric.other)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeAtmospheric.values.byName(subtypeStr)
+        : EventSubtypeAtmospheric.other;
+
+    final event = EventAtmospheric(eventSubtype: subtype)
       ..phenomenon = json['phenomenon']
       ..peakOverpressurePa = json['peakOverpressurePa']
       ..altitudeKm = json['altitudeKm']
       ..estimatedEnergyJoules = json['estimatedEnergyJoules'];
+
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -62,11 +80,20 @@ class CryoseismicEventSerializer extends EventSerializer<EventCryoseismic> {
   
   @override
   EventCryoseismic deserialize(Map<String, dynamic> json) {
-    return EventCryoseismic(eventSubtype: EventSubtypeCryoseismic.other)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeCryoseismic.values.byName(subtypeStr)
+        : EventSubtypeCryoseismic.other;
+
+    final event = EventCryoseismic(eventSubtype: subtype)
       ..iceThicknessMeters = json['iceThicknessMeters']
       ..airTemperatureCelsius = json['airTemperatureCelsius']
       ..glacierIceBodyName = json['glacierIceBodyName']
       ..crackLengthMeters = json['crackLengthMeters'];
+
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -84,11 +111,20 @@ class GeodeticEventSerializer extends EventSerializer<EventGeodetic> {
   
   @override
   EventGeodetic deserialize(Map<String, dynamic> json) {
-    return EventGeodetic(eventSubtype: EventSubtypeGeodetic.other)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeGeodetic.values.byName(subtypeStr)
+        : EventSubtypeGeodetic.other;
+
+    final event = EventGeodetic(eventSubtype: subtype)
       ..displacementNorthMm = json['displacementNorthMm']
       ..displacementEastMm = json['displacementEastMm']
       ..displacementVerticalMm = json['displacementVerticalMm']
       ..instrumentType = json['instrumentType'];
+
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -107,12 +143,21 @@ class HydrothermalEventSerializer extends EventSerializer<EventHydrothermal> {
   
   @override
   EventHydrothermal deserialize(Map<String, dynamic> json) {
-    return EventHydrothermal(eventSubtype: EventSubtypeHydrothermal.other)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeHydrothermal.values.byName(subtypeStr)
+        : EventSubtypeHydrothermal.other;
+
+    final event =  EventHydrothermal(eventSubtype: subtype)
       ..featureType = json['featureType']
       ..waterTemperatureCelsius = json['waterTemperatureCelsius']
       ..phLevel = json['phLevel']
       ..dischargeRateLitersPerSec = json['dischargeRateLitersPerSec']
       ..eruptionOccurred = json['eruptionOccurred'];
+
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -132,13 +177,22 @@ class MassMovementEventSerializer extends EventSerializer<EventMassMovement> {
   
   @override
   EventMassMovement deserialize(Map<String, dynamic> json) {
-    return EventMassMovement(eventSubtype: EventSubtypeMM.other)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeMM.values.byName(subtypeStr)
+        : EventSubtypeMM.other;
+
+    final event = EventMassMovement(eventSubtype: subtype)
       ..volumeM3 = json['volumeM3']
       ..velocityMetersPerSecond = json['velocityMetersPerSecond']
       ..runoutDistanceMeters = json['runoutDistanceMeters']
       ..slopeAngleDegrees = json['slopeAngleDegrees']
       ..trigger = json['trigger']
       ..secondaryHazard = json['secondaryHazard'];
+
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -157,12 +211,20 @@ class SeismicEventSerializer extends EventSerializer<EventSeismic> {
   
   @override
   EventSeismic deserialize(Map<String, dynamic> json) {
-    return EventSeismic(eventSubtype: EventSubtypeSeismic.unspecified)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeSeismic.values.byName(subtypeStr)
+        : EventSubtypeSeismic.unspecified;
+
+    final event = EventSeismic(eventSubtype: subtype)
       ..magnitude = json['magnitude']
       ..magnitudeType = json['magnitudeType']
       ..depth = json['depth']
       ..depthUncertainty = json['depthUncertainty']
       ..focalMechanism = json['focalMechanism'];
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -181,12 +243,21 @@ class VolcanicEruptiveEventSerializer extends EventSerializer<EventVolcanicErupt
   
   @override
   EventVolcanicEruptive deserialize(Map<String, dynamic> json) {
-    return EventVolcanicEruptive(eventSubtype: EventSubtypeVolcanicE.other)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeVolcanicE.values.byName(subtypeStr)
+        : EventSubtypeVolcanicE.other;
+
+    final event = EventVolcanicEruptive(eventSubtype: subtype)
       ..volcanoName = json['volcanoName']
       ..elevation = json['elevation']
       ..plumeHeightMeters = json['plumeHeightMeters']
       ..vei = json['vei']
       ..hazards = json['hazards'];
+
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -205,12 +276,21 @@ class VolcanicNonEruptiveEventSerializer extends EventSerializer<EventVolcanicNo
   
   @override
   EventVolcanicNonEruptive deserialize(Map<String, dynamic> json) {
-    return EventVolcanicNonEruptive(eventSubtype: EventSubtypeVolcanicNE.other)
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeVolcanicNE.values.byName(subtypeStr)
+        : EventSubtypeVolcanicNE.other;
+
+    final event = EventVolcanicNonEruptive(eventSubtype: subtype)
       ..volcanoName = json['volcanoName']
       ..elevation = json['elevation']
       ..groundDeformationMm = json['groundDeformationMm']
       ..so2Flux = json['so2Flux']
       ..fumaroleTemperature = json['fumaroleTemperature'];
+  
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -223,7 +303,15 @@ class MultisensorEventSerializer extends EventSerializer<EventMultisensor> {
 
   @override
   EventMultisensor deserialize(Map<String, dynamic> json) {
-    return EventMultisensor(eventSubtype: EventSubtypeMultisensor.default_);
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeMultisensor.values.byName(subtypeStr)
+        : EventSubtypeMultisensor.default_;
+
+    final event = EventMultisensor(eventSubtype: subtype);
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -235,7 +323,33 @@ class FalseTestEventSerializer extends EventSerializer<EventFalseTest> {
 
   @override
   EventFalseTest deserialize(Map<String, dynamic> json) {
-    return EventFalseTest(eventSubtype: EventSubtypeFalseTest.default_);
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtypeFalseTest.values.byName(subtypeStr)
+        : EventSubtypeFalseTest.default_;
+    
+    final event = EventFalseTest(eventSubtype: subtype);
+    _populateExtraFields(event, json);
+
+    return event;
+  }
+}
+
+class UnspecifiedSerializer extends EventSerializer<Event> {
+  @override
+  Map<String, dynamic> serializeSpecific(Event event) {return {};}
+
+  @override
+  Event deserialize(Map<String, dynamic> json) {
+    final subtypeStr = json['eventSubtype'] as String?;
+    final subtype = subtypeStr != null
+        ? EventSubtype.values.byName(subtypeStr)
+        : EventSubtype.unspecified;
+
+    final event = EventUnspecified(eventSubtype: subtype);
+    _populateExtraFields(event, json);
+
+    return event;
   }
 }
 
@@ -254,6 +368,7 @@ class EventSerializerRegistry {
     EventType.volcanicNonEruptive: VolcanicNonEruptiveEventSerializer(),
     EventType.multiSensor: MultisensorEventSerializer(),
     EventType.false_test: FalseTestEventSerializer(),
+    EventType.unspecified_anomalous: UnspecifiedSerializer(),
   };
   
   static EventSerializer getSerializer(EventType type) {
@@ -267,4 +382,11 @@ class EventSerializerRegistry {
   static bool hasSerializer(EventType type) {
     return _serializers.containsKey(type);
   }
+}
+
+// because annoying bug ¯\_(ツ)_/¯
+void _populateExtraFields(Event event, Map<String, dynamic> json) {
+  event.status = EventPostStatus.values.byName(json['status'] ?? 'unspecified');
+  event.source = json['source'] ?? '';
+  event.description = json['description'] ?? '';
 }
