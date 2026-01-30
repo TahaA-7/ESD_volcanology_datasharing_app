@@ -1,17 +1,24 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
+
+// Use existing event post model (no changes to model)
+import '../models/event_post_model.dart';
 
 class TimelineWidget extends StatefulWidget {
   final DateTime? filterFromDate;
   final DateTime? filterToDate;
   final String? quickTimeFilter;
-  
+  final List<Event>? events; // posted events to display
+
   const TimelineWidget({
     super.key,
     this.filterFromDate,
     this.filterToDate,
     this.quickTimeFilter,
+    this.events,
   });
 
   @override
@@ -24,7 +31,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
   late DateTime _minDate;
   late DateTime _maxDate;
   final ScrollController _scrollController = ScrollController();
-  
+
   double? _dragStartX;
   DateTime? _dragStartTime;
   DateTime? _dragEndTime;
@@ -35,7 +42,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
     // Set the absolute range: 2010 to now
     _minDate = DateTime(2010, 1, 1);
     _maxDate = DateTime.now();
-    
+
     // Initialize to show today by default
     _initializeToday();
   }
@@ -43,21 +50,27 @@ class _TimelineWidgetState extends State<TimelineWidget> {
   @override
   void didUpdateWidget(TimelineWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Apply filters when they change
-    if (widget.quickTimeFilter != null && widget.quickTimeFilter != oldWidget.quickTimeFilter) {
+    if (widget.quickTimeFilter != null &&
+        widget.quickTimeFilter != oldWidget.quickTimeFilter) {
       _applyQuickTimeFilter(widget.quickTimeFilter!);
-    } else if ((widget.filterFromDate != oldWidget.filterFromDate || 
-                widget.filterToDate != oldWidget.filterToDate) &&
-               (widget.filterFromDate != null || widget.filterToDate != null)) {
+    } else if ((widget.filterFromDate != oldWidget.filterFromDate ||
+            widget.filterToDate != oldWidget.filterToDate) &&
+        (widget.filterFromDate != null || widget.filterToDate != null)) {
       _applyCustomDateFilter();
+    }
+
+    // If events reference changed, trigger repaint by calling setState
+    if (widget.events != oldWidget.events) {
+      setState(() {});
     }
   }
 
   void _applyQuickTimeFilter(String timeFilter) {
     final now = DateTime.now();
     Duration duration;
-    
+
     switch (timeFilter) {
       case '1h':
         duration = const Duration(hours: 1);
@@ -83,7 +96,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
       default:
         duration = const Duration(days: 1);
     }
-    
+
     setState(() {
       _endTime = now;
       _startTime = now.subtract(duration);
@@ -101,7 +114,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
         // If no end date specified, use now
         _endTime = DateTime.now();
       }
-      
+
       // Ensure we have a valid range
       if (_startTime.isAfter(_endTime)) {
         final temp = _startTime;
@@ -173,14 +186,14 @@ class _TimelineWidgetState extends State<TimelineWidget> {
 
     final dragDelta = details.localPosition.dx - _dragStartX!;
     final duration = _dragEndTime!.difference(_dragStartTime!);
-    
+
     // Calculate how much time the drag represents
     final dragRatio = -dragDelta / timelineWidth; // Negative so dragging right goes back in time
     final timeDelta = Duration(milliseconds: (duration.inMilliseconds * dragRatio).round());
-    
+
     var newStart = _dragStartTime!.add(timeDelta);
     var newEnd = _dragEndTime!.add(timeDelta);
-    
+
     // Clamp to min/max dates
     if (newStart.isBefore(_minDate)) {
       final diff = _minDate.difference(newStart);
@@ -192,7 +205,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
       newEnd = _maxDate;
       newStart = newStart.subtract(diff);
     }
-    
+
     setState(() {
       _startTime = newStart;
       _endTime = newEnd;
@@ -281,6 +294,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
                     painter: TimelinePainter(
                       startTime: _startTime,
                       endTime: _endTime,
+                      events: widget.events ?? const [],
                     ),
                     child: Container(),
                   ),
@@ -297,10 +311,12 @@ class _TimelineWidgetState extends State<TimelineWidget> {
 class TimelinePainter extends CustomPainter {
   final DateTime startTime;
   final DateTime endTime;
+  final List<Event> events;
 
   TimelinePainter({
     required this.startTime,
     required this.endTime,
+    this.events = const [],
   });
 
   @override
@@ -330,8 +346,12 @@ class TimelinePainter extends CustomPainter {
       _drawSingleDayTimeline(canvas, size, paint, textPainter);
     }
 
-    // Draw sample events (placeholder bars)
-    _drawSampleEvents(canvas, size);
+    // Draw posted events (fallback to sample if none)
+    if (events.isNotEmpty) {
+      _drawEvents(canvas, size, textPainter);
+    // } else {
+    //   _drawSampleEvents(canvas, size);
+    }
   }
 
   void _drawSingleDayTimeline(Canvas canvas, Size size, Paint paint, TextPainter textPainter) {
@@ -519,10 +539,10 @@ class TimelinePainter extends CustomPainter {
 
     // Calculate time span for positioning events
     final duration = endTime.difference(startTime);
-    final totalHours = duration.inHours;
+    final totalHours = max(1, duration.inHours); 
 
     // Sample events at different times
-    final events = [
+    final sample = [
       {'start': 2, 'duration': 1.5, 'y': 0.3},
       {'start': 4, 'duration': 0.8, 'y': 0.4},
       {'start': 6, 'duration': 2.0, 'y': 0.25},
@@ -532,7 +552,7 @@ class TimelinePainter extends CustomPainter {
       {'start': 19, 'duration': 1.0, 'y': 0.4},
     ];
 
-    for (var event in events) {
+    for (var event in sample) {
       final startHour = event['start'] as num;
       final eventDuration = event['duration'] as num;
       final yPosition = event['y'] as num;
@@ -555,8 +575,147 @@ class TimelinePainter extends CustomPainter {
     }
   }
 
+  Color _colorForEventType(EventType t) {
+    switch (t) {
+      case EventType.seismic_tectonic:
+        return Colors.deepOrange;
+      case EventType.volcanicEruptive_surfaceProcess:
+      case EventType.volcanicNonEruptive:
+        return Colors.redAccent;
+      case EventType.massMovement_surfaceInstability:
+        return Colors.brown;
+      case EventType.hydrothermal_fluidDriven:
+        return Colors.teal;
+      case EventType.cryoseismic_glacial:
+        return Colors.lightBlue;
+      case EventType.atmospheric_coupledSignals:
+        return Colors.indigo;
+      case EventType.anthropogenic:
+        return Colors.purple;
+      case EventType.geodetic_deformation:
+        return Colors.green;
+      default:
+        return Colors.grey.shade700;
+    }
+  }
+
+  void _drawEvents(Canvas canvas, Size size, TextPainter textPainter) {
+    final durationMs = endTime.difference(startTime).inMilliseconds;
+    if (durationMs <= 0) return;
+
+    // Sort events by duration (longest first) so they render behind shorter ones
+    final sortedEvents = List<Event>.from(events)
+      ..sort((a, b) {
+        final aDur = a.timeRange?.duration.inMilliseconds ?? a.duration.inMilliseconds;
+        final bDur = b.timeRange?.duration.inMilliseconds ?? b.duration.inMilliseconds;
+        return bDur.compareTo(aDur); // longest first
+      });
+
+    final double topPadding = 20;
+    final double barHeight = 24;
+    final double verticalSpacing = 4;
+    
+    // Track vertical lanes to avoid overlap
+    final List<DateTime?> laneEndTimes = [];
+
+    for (var ev in sortedEvents) {
+      // Get event start and end times
+      DateTime? eventStart;
+      DateTime? eventEnd;
+      
+      if (ev.timeRange != null) {
+        eventStart = ev.timeRange!.start;
+        eventEnd = ev.timeRange!.end;
+      } else if (ev.startTime != null) {
+        eventStart = ev.startTime;
+        eventEnd = ev.startTime!.add(ev.duration);
+      }
+      
+      if (eventStart == null || eventEnd == null) continue;
+      if (eventEnd.isBefore(startTime) || eventStart.isAfter(endTime)) continue;
+
+      // Clamp to visible range
+      final visibleStart = eventStart.isBefore(startTime) ? startTime : eventStart;
+      final visibleEnd = eventEnd.isAfter(endTime) ? endTime : eventEnd;
+
+      // Calculate positions
+      final startRatio = visibleStart.difference(startTime).inMilliseconds / durationMs;
+      final endRatio = visibleEnd.difference(startTime).inMilliseconds / durationMs;
+      
+      final x = (startRatio * size.width).clamp(0.0, size.width);
+      final width = ((endRatio - startRatio) * size.width).clamp(2.0, size.width - x);
+
+      // Find available lane (vertical position)
+      int laneIndex = 0;
+      while (laneIndex < laneEndTimes.length) {
+        if (laneEndTimes[laneIndex] == null || 
+            laneEndTimes[laneIndex]!.isBefore(visibleStart)) {
+          break;
+        }
+        laneIndex++;
+      }
+      
+      // Ensure we have enough lanes
+      while (laneIndex >= laneEndTimes.length) {
+        laneEndTimes.add(null);
+      }
+      
+      laneEndTimes[laneIndex] = visibleEnd;
+      
+      final y = topPadding + (laneIndex * (barHeight + verticalSpacing));
+
+      // Draw event bar
+      final paint = Paint()
+        ..color = _colorForEventType(ev.eventType)
+        ..style = PaintingStyle.fill;
+      
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, y, width, barHeight),
+        const Radius.circular(4),
+      );
+      
+      canvas.drawRRect(rect, paint);
+
+      // Draw border
+      final borderPaint = Paint()
+        ..color = _colorForEventType(ev.eventType).withOpacity(0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      canvas.drawRRect(rect, borderPaint);
+
+      // Draw label if there's enough space
+      if (width > 40) {
+        final labelSource = (ev.source.isNotEmpty ? ev.source : ev.description);
+        final label = (labelSource.isNotEmpty ? labelSource : ev.eventType.name);
+        
+        textPainter.text = TextSpan(
+          text: label.length > 30 ? label.substring(0, 28) + '…' : label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            shadows: [Shadow(color: Colors.black26, blurRadius: 2)],
+          ),
+        );
+        textPainter.layout(maxWidth: width - 8);
+        
+        if (textPainter.width < width - 8) {
+          textPainter.paint(
+            canvas,
+            Offset(x + 4, y + (barHeight - textPainter.height) / 2),
+          );
+        }
+      }
+    }
+  }
+
+
   @override
   bool shouldRepaint(TimelinePainter oldDelegate) {
-    return oldDelegate.startTime != startTime || oldDelegate.endTime != endTime;
+    if (oldDelegate.startTime != startTime || oldDelegate.endTime != endTime) return true;
+    // compare event ids to decide repaint
+    final oldIds = oldDelegate.events.map((e) => e.id).join(',');
+    final newIds = events.map((e) => e.id).join(',');
+    return oldIds != newIds;
   }
 }

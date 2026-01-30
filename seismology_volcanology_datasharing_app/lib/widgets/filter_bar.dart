@@ -7,11 +7,13 @@ import '../screens/event_post_wizard.dart';
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
   final Function(String)? onQuickTimeSelected;
+  final Future<void> Function()? onEventPosted;
   
   const FilterBar({
     super.key,
     this.onTimeRangeChanged,
     this.onQuickTimeSelected,
+    this.onEventPosted,
   });
 
   @override
@@ -122,8 +124,10 @@ class _FilterBarState extends State<FilterBar> {
               _iconButton(
                 Icons.post_add,
                 'Post',
-                onPressed: () {
-                  Navigator.of(context).push(
+                // onPressed: () {
+                //   Navigator.of(context).push(
+                onPressed: () async {
+                  await Navigator.of(context).push(
                     MaterialPageRoute(
                       fullscreenDialog: true,
                       builder: (_) => ChangeNotifierProvider(
@@ -142,6 +146,7 @@ class _FilterBarState extends State<FilterBar> {
             //         builder: (_) => const EventPostWizardScreen(),
                     ),
                   );
+                  widget.onEventPosted?.call();
                 },
               ),
             ],

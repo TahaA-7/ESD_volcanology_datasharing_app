@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 import '../widgets/legend.dart';
+import '../models/event_post_model.dart';
+import '../utils_services/event_storage.dart';
 
 /// Map layers enum
 enum MapLayer {
@@ -39,7 +41,7 @@ extension MapLayerExtension on MapLayer {
   }
 }
 
-/// Selection bounds model
+/// Selection model
 class SelectionBounds {
   final LatLng northEast;
   final LatLng southWest;
@@ -56,7 +58,8 @@ class SelectionBounds {
 
 /// Main map screen with selection
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  final List<Event>? events;
+  const MapScreen({super.key, this.events});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -67,18 +70,65 @@ class _MapScreenState extends State<MapScreen> {
   double _currentZoom = 2.0;
   MapLayer _selectedLayer = MapLayer.standard;
 
+  // Events
+  List<Event> _events = [];
+  bool _isLoading = true;
+
   // Selection state
-  bool _selectionMode = false; // Toggle for selection mode
+  bool _selectionMode = false;
   Offset? _selectionStart;
   Offset? _selectionEnd;
   SelectionBounds? _selectedBounds;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  @override
+  void didUpdateWidget(MapScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update events when user passes new filtered events
+    if (widget.events != null) {
+      setState(() {
+        _events = widget.events!;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadEvents() async {
+    // events posted by user
+    if (widget.events != null) {
+      setState(() {
+        _events = widget.events!;
+        _isLoading = false;
+      });
+    } else {
+      // load from storage
+      final events = await EventStorage.loadEvents();
+      setState(() {
+        _events = events;
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Future<void> _loadEvents() async {
+  //   final events = await EventStorage.loadEvents();
+  //   setState(() {
+  //     _events = events;
+  //     _isLoading = false;
+  //   });
+  // }
 
   void _startSelection(Offset position) {
     if (_selectionMode) {
       setState(() {
         _selectionStart = position;
         _selectionEnd = position;
-        _selectedBounds = null; // Clear previous selection
+        _selectedBounds = null;
       });
     }
   }
@@ -93,19 +143,14 @@ class _MapScreenState extends State<MapScreen> {
 
   void _endSelection() {
     if (_selectionMode && _selectionStart != null && _selectionEnd != null) {
-      // Only create selection if drag was significant (more than 20 pixels)
       final dx = (_selectionStart!.dx - _selectionEnd!.dx).abs();
       final dy = (_selectionStart!.dy - _selectionEnd!.dy).abs();
       
       if (dx > 20 || dy > 20) {
-        // Convert screen coordinates to lat/lng using camera's visibleBounds
         final camera = _mapController.camera;
-        
-        // Get the screen size
         final bounds = camera.visibleBounds;
         final size = camera.size;
         
-        // Calculate the lat/lng based on proportional screen position
         final lat1 = bounds.north - (_selectionStart!.dy / size.height) * (bounds.north - bounds.south);
         final lng1 = bounds.west + (_selectionStart!.dx / size.width) * (bounds.east - bounds.west);
         
@@ -115,7 +160,6 @@ class _MapScreenState extends State<MapScreen> {
         final point1 = LatLng(lat1, lng1);
         final point2 = LatLng(lat2, lng2);
 
-        // Calculate bounds
         final north = point1.latitude > point2.latitude ? point1.latitude : point2.latitude;
         final south = point1.latitude < point2.latitude ? point1.latitude : point2.latitude;
         final east = point1.longitude > point2.longitude ? point1.longitude : point2.longitude;
@@ -128,7 +172,6 @@ class _MapScreenState extends State<MapScreen> {
           );
         });
 
-        // You can emit this selection to filter your events
         _onSelectionComplete(_selectedBounds!);
       }
       
@@ -148,8 +191,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onSelectionComplete(SelectionBounds bounds) {
-    // TODO: Filter your events based on the bounds
-    // You can call a callback or update a provider here
     print('Selection complete: ${bounds.northEast}, ${bounds.southWest}');
   }
 
@@ -179,14 +220,145 @@ class _MapScreenState extends State<MapScreen> {
     ];
   }
 
+  Color _getEventColor(EventType type) {
+    switch (type) {
+      case EventType.seismic_tectonic:
+        return Colors.red;
+      case EventType.volcanicEruptive_surfaceProcess:
+        return Colors.orange;
+      case EventType.volcanicNonEruptive:
+        return Colors.deepOrange;
+      case EventType.massMovement_surfaceInstability:
+        return Colors.brown;
+      case EventType.cryoseismic_glacial:
+        return Colors.lightBlue;
+      case EventType.hydrothermal_fluidDriven:
+        return Colors.blue;
+      case EventType.atmospheric_coupledSignals:
+        return Colors.purple;
+      case EventType.anthropogenic:
+        return Colors.grey;
+      case EventType.geodetic_deformation:
+        return Colors.green;
+      case EventType.multiSensor:
+        return Colors.teal;
+      case EventType.false_test:
+        return Colors.black;
+      case EventType.unspecified_anomalous:
+      default:
+        return Colors.yellow;
+    }
+  }
+
+  IconData _getEventIcon(EventType type) {
+    switch (type) {
+      case EventType.seismic_tectonic:
+        return Icons.waves;
+      case EventType.volcanicEruptive_surfaceProcess:
+      case EventType.volcanicNonEruptive:
+        return Icons.terrain;
+      case EventType.massMovement_surfaceInstability:
+        return Icons.landslide;
+      case EventType.cryoseismic_glacial:
+        return Icons.ac_unit;
+      case EventType.hydrothermal_fluidDriven:
+        return Icons.water_drop;
+      case EventType.atmospheric_coupledSignals:
+        return Icons.cloud;
+      case EventType.anthropogenic:
+        return Icons.construction;
+      case EventType.geodetic_deformation:
+        return Icons.compress;
+      case EventType.multiSensor:
+        return Icons.sensors;
+      case EventType.false_test:
+        return Icons.cancel;
+      case EventType.unspecified_anomalous:
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  List<Marker> _buildEventMarkers() {
+    return _events
+        .where((event) => event.latitude != null && event.longitude != null)
+        .map((event) {
+      final color = _getEventColor(event.eventType);
+      final icon = _getEventIcon(event.eventType);
+
+      return Marker(
+        point: LatLng(event.latitude!, event.longitude!),
+        width: 40,
+        height: 40,
+        child: GestureDetector(
+          onTap: () {
+            _showEventDetails(event);
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.8),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  void _showEventDetails(Event event) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(event.eventType.name.replaceAll('_', ' ')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (event.source.isNotEmpty)
+              Text('Source: ${event.source}'),
+            if (event.description.isNotEmpty)
+              Text('Description: ${event.description}'),
+            if (event.startTime != null)
+              Text('Start: ${event.startTime}'),
+            if (event.country != Country.unspecified)
+              Text('Country: ${event.country.name}'),
+            if (event.townCity.isNotEmpty)
+              Text('Location: ${event.townCity}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Stack(
       children: [
-        // The map itself with gesture detection
         GestureDetector(
           onPanStart: (details) {
-            // Always start selection on pan start
             _startSelection(details.localPosition);
           },
           onPanUpdate: (details) {
@@ -205,8 +377,8 @@ class _MapScreenState extends State<MapScreen> {
               },
               interactionOptions: InteractionOptions(
                 flags: _selectionMode 
-                    ? InteractiveFlag.none // Disable map interactions in selection mode
-                    : InteractiveFlag.all,  // Enable all interactions in normal mode
+                    ? InteractiveFlag.none
+                    : InteractiveFlag.all,
               ),
             ),
             children: [
@@ -215,7 +387,6 @@ class _MapScreenState extends State<MapScreen> {
                 subdomains: ['a', 'b', 'c'],
                 userAgentPackageName: 'com.example.volcano_app',
               ),
-              // Show selected bounds polygon
               if (_selectedBounds != null)
                 PolygonLayer(
                   polygons: [
@@ -227,11 +398,14 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   ],
                 ),
+              // Event markers
+              MarkerLayer(
+                markers: _buildEventMarkers(),
+              ),
             ],
           ),
         ),
 
-        // Draw selection rectangle while dragging
         if (_selectionMode && _selectionStart != null && _selectionEnd != null && _getSelectionRect() != null)
           Positioned.fromRect(
             rect: _getSelectionRect()!,
@@ -248,14 +422,12 @@ class _MapScreenState extends State<MapScreen> {
 
         const MapLegend(),
 
-        // Selection tools (top left)
         Positioned(
           top: 16,
           left: 16,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Draw selection button
               Material(
                 elevation: 4,
                 borderRadius: BorderRadius.circular(8),
@@ -264,7 +436,6 @@ class _MapScreenState extends State<MapScreen> {
                     setState(() {
                       _selectionMode = !_selectionMode;
                       if (!_selectionMode) {
-                        // Clear selection drawings when exiting selection mode
                         _selectionStart = null;
                         _selectionEnd = null;
                       }
@@ -304,7 +475,6 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
               ),
-              // Clear selection button
               if (_selectedBounds != null) ...[
                 const SizedBox(height: 8),
                 Material(
@@ -334,7 +504,6 @@ class _MapScreenState extends State<MapScreen> {
           ),
         ),
 
-        /// Layer selector button (top right)
         Positioned(
           top: 16,
           right: 16,
@@ -366,7 +535,6 @@ class _MapScreenState extends State<MapScreen> {
           ),
         ),
 
-        /// Zoom in/out buttons (bottom right)
         Positioned(
           right: 16,
           bottom: 16,

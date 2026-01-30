@@ -8,6 +8,7 @@ class HomeShell extends StatelessWidget {
   final ValueChanged<HomeTab> onTabSelected;
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
   final Function(String)? onQuickTimeSelected;
+  final Future<void> Function()? onEventPosted;
 
   const HomeShell({
     super.key,
@@ -16,6 +17,7 @@ class HomeShell extends StatelessWidget {
     required this.onTabSelected,
     this.onTimeRangeChanged,
     this.onQuickTimeSelected,
+    this.onEventPosted,
   });
 
   @override
@@ -32,6 +34,7 @@ class HomeShell extends StatelessWidget {
           FilterBar(
             onTimeRangeChanged: onTimeRangeChanged,
             onQuickTimeSelected: onQuickTimeSelected,
+             onEventPosted: onEventPosted,
           ),
           Expanded(child: child),
         ],

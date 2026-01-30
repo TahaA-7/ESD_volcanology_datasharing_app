@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/event_post_model.dart';
 
 enum EventListView { grid, list }
 
 class EventListWidget extends StatefulWidget {
-  const EventListWidget({super.key});
+  final List<Event>? events;
+  const EventListWidget({super.key, this.events});
 
   @override
   State<EventListWidget> createState() => _EventListWidgetState();
@@ -12,81 +15,52 @@ class EventListWidget extends StatefulWidget {
 class _EventListWidgetState extends State<EventListWidget> {
   EventListView _viewMode = EventListView.grid;
   
-  // Mock event data
-  final List<Map<String, dynamic>> _events = [
-    {
-      'type': 'seismic',
-      'subtype': 'earthquake',
-      'location': 'Kocaeli, Türkiye',
-      'coordinates': '40.881304, 30.068038',
-      'duration': '55m',
-      'dateRange': '14-12-2025 14:30 - 14-21-2025 15:25',
-      'id': '71B1883a-8664-4760-bb57-8b428b7b2a24',
-    },
-    {
-      'type': 'seismic',
-      'subtype': 'earthquake',
-      'location': 'Izmir, Türkiye',
-      'coordinates': '38.423733, 27.142826',
-      'duration': '40m',
-      'dateRange': '13-12-2025 14:35 - 14-21-2025 15:15',
-      'id': '144be38a-2ff2-4058-bfc7-a232424c0e970',
-    },
-    {
-      'type': 'lorem',
-      'subtype': 'ipsum',
-      'location': 'dolor',
-      'coordinates': 'sit',
-      'duration': 'amet',
-      'dateRange': 'consectetur',
-      'id': 'adipiscing',
-    },
-    {
-      'type': 'lorem',
-      'subtype': 'ipsum',
-      'location': 'dolor',
-      'coordinates': 'sit',
-      'duration': 'amet',
-      'dateRange': 'consectetur',
-      'id': 'adipiscing',
-    },
-    {
-      'type': 'lorem',
-      'subtype': 'ipsum',
-      'location': 'dolor',
-      'coordinates': 'sit',
-      'duration': 'amet',
-      'dateRange': 'consectetur',
-      'id': 'adipiscing',
-    },
-    {
-      'type': 'lorem',
-      'subtype': 'ipsum',
-      'location': 'dolor',
-      'coordinates': 'sit',
-      'duration': 'amet',
-      'dateRange': 'consectetur',
-      'id': 'adipiscing',
-    },
-    {
-      'type': 'lorem',
-      'subtype': 'ipsum',
-      'location': 'dolor',
-      'coordinates': 'sit',
-      'duration': 'amet',
-      'dateRange': 'consectetur',
-      'id': 'adipiscing',
-    },
-    {
-      'type': 'lorem',
-      'subtype': 'ipsum',
-      'location': 'dolor',
-      'coordinates': 'sit',
-      'duration': 'amet',
-      'dateRange': 'consectetur',
-      'id': 'adipiscing',
-    },
-  ];
+  List<Event> get _events => widget.events ?? [];
+
+  String _formatEventType(EventType type) {
+    return type.name.replaceAll('_', ' ');
+  }
+
+  String _formatLocation(Event event) {
+    final parts = <String>[];
+    if (event.townCity.isNotEmpty) parts.add(event.townCity);
+    if (event.stateProvince.isNotEmpty) parts.add(event.stateProvince);
+    if (event.country != Country.unspecified) parts.add(event.country.name);
+    
+    return parts.isEmpty ? 'Location not specified' : parts.join(', ');
+  }
+
+  String _formatCoordinates(Event event) {
+    if (event.latitude != null && event.longitude != null) {
+      return '${event.latitude!.toStringAsFixed(6)}, ${event.longitude!.toStringAsFixed(6)}';
+    }
+    return 'N/A';
+  }
+
+  String _formatDuration(Event event) {
+    if (event.duration.inSeconds == 0) return 'N/A';
+    
+    final hours = event.duration.inHours;
+    final minutes = event.duration.inMinutes % 60;
+    
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    }
+    return '${minutes}m';
+  }
+
+  String _formatDateRange(Event event) {
+    final dateFormat = DateFormat('dd-MM-yyyy HH:mm');
+    
+    if (event.timeRange != null) {
+      return '${dateFormat.format(event.timeRange!.start)} - ${dateFormat.format(event.timeRange!.end)}';
+    } else if (event.startTime != null) {
+      final endTime = event.startTime!.add(event.duration);
+      return '${dateFormat.format(event.startTime!)} - ${dateFormat.format(endTime)}';
+    }
+    
+    return 'Time not specified';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,14 +68,18 @@ class _EventListWidgetState extends State<EventListWidget> {
       color: const Color(0xFF6B6B9C),
       child: Column(
         children: [
-          // Header with results count and view toggle
           _buildHeader(),
-          
-          // Content area
           Expanded(
-            child: _viewMode == EventListView.grid
-                ? _buildGridView()
-                : _buildListView(),
+            child: _events.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No events to display',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  )
+                : _viewMode == EventListView.grid
+                    ? _buildGridView()
+                    : _buildListView(),
           ),
         ],
       ),
@@ -114,7 +92,6 @@ class _EventListWidgetState extends State<EventListWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Collapse/Expand button
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.pause, color: Colors.white),
@@ -126,7 +103,6 @@ class _EventListWidgetState extends State<EventListWidget> {
             ),
           ),
           
-          // Results count
           Text(
             '${_events.length} results',
             style: const TextStyle(
@@ -136,7 +112,6 @@ class _EventListWidgetState extends State<EventListWidget> {
             ),
           ),
           
-          // View mode toggle buttons
           Row(
             children: [
               _buildViewButton(
@@ -209,7 +184,7 @@ class _EventListWidgetState extends State<EventListWidget> {
     );
   }
 
-  Widget _buildEventCard(Map<String, dynamic> event) {
+  Widget _buildEventCard(Event event) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -231,7 +206,7 @@ class _EventListWidgetState extends State<EventListWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Event type: ${event['type']}',
+                  'Event type: ${_formatEventType(event.eventType)}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -239,36 +214,41 @@ class _EventListWidgetState extends State<EventListWidget> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Event subtype: ${event['subtype']}',
+                  'Source: ${event.source.isEmpty ? 'N/A' : event.source}',
                   style: const TextStyle(fontSize: 13),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Location: ${event['location']}',
+                  'Location: ${_formatLocation(event)}',
+                  style: const TextStyle(fontSize: 13),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Coordinates: ${_formatCoordinates(event)}',
                   style: const TextStyle(fontSize: 13),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Location: ${event['coordinates']}',
+                  'Duration: ${_formatDuration(event)}',
                   style: const TextStyle(fontSize: 13),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Duration: ${event['duration']}',
+                  'Time: ${_formatDateRange(event)}',
                   style: const TextStyle(fontSize: 13),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Duration: ${event['dateRange']}',
-                  style: const TextStyle(fontSize: 13),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const Spacer(),
                 Text(
-                  'id: ${event['id']}',
+                  'id: ${event.id}',
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.grey[600],
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -278,7 +258,9 @@ class _EventListWidgetState extends State<EventListWidget> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  _showEventDetails(event);
+                },
                 child: const Text(
                   'More details (click)',
                   style: TextStyle(fontSize: 12),
@@ -306,7 +288,6 @@ class _EventListWidgetState extends State<EventListWidget> {
           ),
           child: Column(
             children: [
-              // Header row
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -317,18 +298,17 @@ class _EventListWidgetState extends State<EventListWidget> {
                 child: Row(
                   children: [
                     _buildHeaderCell('Type', flex: 2),
-                    _buildHeaderCell('Subtype', flex: 2),
+                    _buildHeaderCell('Source', flex: 2),
                     _buildHeaderCell('Location', flex: 2),
-                    _buildHeaderCell('Location', flex: 2),
-                    _buildHeaderCell('Duration', flex: 2),
-                    _buildHeaderCell('Duration', flex: 3),
-                    _buildHeaderCell('Id', flex: 3),
-                    const SizedBox(width: 100), // Space for checkbox and button
+                    _buildHeaderCell('Coordinates', flex: 2),
+                    _buildHeaderCell('Duration', flex: 1),
+                    _buildHeaderCell('Time Range', flex: 3),
+                    _buildHeaderCell('Id', flex: 2),
+                    const SizedBox(width: 100),
                   ],
                 ),
               ),
               
-              // Data rows
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -357,7 +337,7 @@ class _EventListWidgetState extends State<EventListWidget> {
     );
   }
 
-  Widget _buildListRow(Map<String, dynamic> event, int index) {
+  Widget _buildListRow(Event event, int index) {
     final isEven = index % 2 == 0;
     
     return Container(
@@ -370,15 +350,14 @@ class _EventListWidgetState extends State<EventListWidget> {
       ),
       child: Row(
         children: [
-          _buildDataCell(event['type'], flex: 2),
-          _buildDataCell(event['subtype'], flex: 2),
-          _buildDataCell(event['location'], flex: 2),
-          _buildDataCell(event['coordinates'], flex: 2),
-          _buildDataCell(event['duration'], flex: 2),
-          _buildDataCell(event['dateRange'], flex: 3),
-          _buildDataCell(event['id'], flex: 3),
+          _buildDataCell(_formatEventType(event.eventType), flex: 2),
+          _buildDataCell(event.source.isEmpty ? 'N/A' : event.source, flex: 2),
+          _buildDataCell(_formatLocation(event), flex: 2),
+          _buildDataCell(_formatCoordinates(event), flex: 2),
+          _buildDataCell(_formatDuration(event), flex: 1),
+          _buildDataCell(_formatDateRange(event), flex: 3),
+          _buildDataCell(event.id, flex: 2),
           
-          // Checkbox and button
           SizedBox(
             width: 100,
             child: Row(
@@ -389,12 +368,14 @@ class _EventListWidgetState extends State<EventListWidget> {
                 ),
                 Expanded(
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      _showEventDetails(event);
+                    },
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
                     ),
                     child: const Text(
-                      'More details (click)',
+                      'More details',
                       style: TextStyle(fontSize: 11),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -415,6 +396,62 @@ class _EventListWidgetState extends State<EventListWidget> {
         text,
         style: const TextStyle(fontSize: 13),
         overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  void _showEventDetails(Event event) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_formatEventType(event.eventType)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDetailRow('ID', event.id),
+              _buildDetailRow('Type', _formatEventType(event.eventType)),
+              if (event.source.isNotEmpty)
+                _buildDetailRow('Source', event.source),
+              if (event.description.isNotEmpty)
+                _buildDetailRow('Description', event.description),
+              _buildDetailRow('Location', _formatLocation(event)),
+              _buildDetailRow('Coordinates', _formatCoordinates(event)),
+              _buildDetailRow('Duration', _formatDuration(event)),
+              _buildDetailRow('Time Range', _formatDateRange(event)),
+              _buildDetailRow('Status', event.status.name),
+              _buildDetailRow('Draft', event.draft ? 'Yes' : 'No'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            child: Text(value),
+          ),
+        ],
       ),
     );
   }
