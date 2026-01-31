@@ -1,10 +1,26 @@
 part of '../screens/event_post_wizard.dart';
 
+enum IsValidFormInput{
+  valid,
+  invalid_location,
+
+  unallowed_time_nullables,
+  duration_fields_not_numerical,
+  timerange_duration_mismatch,
+  starttime_after_endtime,
+
+  invalid_integer,
+  invalid_double,
+
+  geodetic_displacement_fields_mismatch,
+  volanic_invalid_vei,
+}
+
 abstract class FormSection {
   Map<String, dynamic> toJson();
   void fromJson(Map<String, dynamic> json);
   void reset();
-  bool isValid();
+  IsValidFormInput isValid();
 }
 
 // Step 1.1 - location
@@ -45,8 +61,9 @@ class LocationSection extends FormSection {
   }
   
   @override
-  bool isValid() {
-    return (longitude != null && latitude != null) || stateprovince != null;
+  IsValidFormInput isValid() {
+    if ((longitude != null && latitude != null) || country != null || stateprovince != null) return IsValidFormInput.valid;
+    return IsValidFormInput.invalid_location;
   }
 }
 
@@ -90,23 +107,45 @@ class TimeSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     final timeValues = [years, days, hours, minutes, seconds, microseconds];
-    bool isValid = true;
 
     for (var val in timeValues) {
       // If a field is not null but contains non-numeric text, it's invalid
       if (val != null && int.tryParse(val) == null) {
-        isValid = false; 
-        break;
+        // isValid = false; 
+        // break;
+        return IsValidFormInput.invalid_integer;
       }
     }
 
-    if (startTime != null && endTime != null) {
-      if (startTime!.isAfter(endTime!)) isValid = false;
+    if (startTime == null && endTime == null) {
+      return IsValidFormInput.unallowed_time_nullables;
     }
 
-    return isValid;
+    if (startTime != null && endTime != null) {
+      if (startTime!.isAfter(endTime!)) IsValidFormInput.starttime_after_endtime;
+      
+      final duration = Duration(
+        days: (int.tryParse(years ?? '0') ?? 0) * 365 + (int.tryParse(days ?? '0') ?? 0),
+        hours: int.tryParse(hours ?? '0') ?? 0,
+        minutes: int.tryParse(minutes ?? '0') ?? 0,
+        seconds: int.tryParse(seconds ?? '0') ?? 0,
+        microseconds: int.tryParse(microseconds ?? '0') ?? 0,
+      );
+      final timeRangeDuration = endTime!.difference(startTime!);
+      if (duration != timeRangeDuration){
+        // years = (timeRangeDuration.inDays ~/ 365).toString();
+        // days = (timeRangeDuration.inDays % 365).toString();
+        // hours = (timeRangeDuration.inHours % 24).toString();
+        // minutes = (timeRangeDuration.inMinutes % 60).toString();
+        // seconds = (timeRangeDuration.inSeconds % 60).toString();
+        // microseconds = (timeRangeDuration.inMicroseconds % 1000000).toString();
+        return IsValidFormInput.timerange_duration_mismatch;
+      }
+    }
+
+    return IsValidFormInput.valid;
   }
 }
 
@@ -136,8 +175,9 @@ class ExtraDetailsSection extends FormSection {
     eventPostStatus = null; source = null; description = null;
   }
 
-  bool isValid() {
-    return true;
+  @override
+  IsValidFormInput isValid() {
+    return IsValidFormInput.valid;
   }
 }
 
@@ -179,11 +219,13 @@ class AnthropogenicSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     if (explosiveYieldKg != null && explosiveYieldKg!.isNotEmpty) {
-      return double.tryParse(explosiveYieldKg!) != null;
+      if (double.tryParse(explosiveYieldKg!) == null) {
+        return IsValidFormInput.invalid_double;
+      }
     }
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -221,14 +263,14 @@ class AtmosphericSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     final numericFields = [peakOverpressurePa, altitudeKm, estimatedEnergyJoules];
     for (var field in numericFields) {
       if (field != null && field.isNotEmpty && double.tryParse(field) == null) {
-        return false;
+        return IsValidFormInput.invalid_double;
       }
     }
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -266,14 +308,14 @@ class CryoseismicSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     final numericFields = [iceThicknessMeters, airTemperatureCelsius, crackLengthMeters];
     for (var field in numericFields) {
       if (field != null && field.isNotEmpty && double.tryParse(field) == null) {
-        return false;
+        return IsValidFormInput.invalid_double;
       }
     }
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -311,14 +353,14 @@ class GeodeticSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     final numericFields = [displacementNorthMm, displacementEastMm, displacementVerticalMm];
     for (var field in numericFields) {
       if (field != null && field.isNotEmpty && double.tryParse(field) == null) {
-        return false;
+        return IsValidFormInput.invalid_double;
       }
     }
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -360,14 +402,14 @@ class HydrothermalSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     final numericFields = [waterTemperatureCelsius, phLevel, dischargeRateLitersPerSec];
     for (var field in numericFields) {
       if (field != null && field.isNotEmpty && double.tryParse(field) == null) {
-        return false;
+        return IsValidFormInput.invalid_double;
       }
     }
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -413,14 +455,14 @@ class MassMovementSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     final numericFields = [volumeM3, velocityMetersPerSecond, runoutDistanceMeters, slopeAngleDegrees];
     for (var field in numericFields) {
       if (field != null && field.isNotEmpty && double.tryParse(field) == null) {
-        return false;
+        return IsValidFormInput.invalid_double;
       }
     }
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -462,14 +504,14 @@ class SeismicSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     final numericFields = [magnitude, magnitudeType, depth, depthUncertainty];
     for (var field in numericFields) {
       if (field != null && field.isNotEmpty && double.tryParse(field) == null) {
-        return false;
+        return IsValidFormInput.invalid_double;
       }
     }
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -499,11 +541,13 @@ class VolcanicBaseSection extends FormSection {
   }
 
   @override
-  bool isValid() {
+  IsValidFormInput isValid() {
     if (elevation != null && elevation!.isNotEmpty) {
-      return double.tryParse(elevation!) != null;
+      if (double.tryParse(elevation!) == null) {
+        return IsValidFormInput.invalid_double;
+      }
     }
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -541,19 +585,24 @@ class VolcanicEruptiveSection extends VolcanicBaseSection {
   }
 
   @override
-  bool isValid() {
-    if (!super.isValid()) return false;
-    
+  IsValidFormInput isValid() {
+    final baseValid = super.isValid();
+    if (baseValid != IsValidFormInput.valid) return baseValid;
+
     if (plumeHeightMeters != null && plumeHeightMeters!.isNotEmpty) {
-      if (double.tryParse(plumeHeightMeters!) == null) return false;
+      if (double.tryParse(plumeHeightMeters!) == null) {
+        return IsValidFormInput.invalid_double;
+      }
     }
     
     if (vei != null && vei!.isNotEmpty) {
       final veiInt = int.tryParse(vei!);
-      if (veiInt == null || veiInt < 0 || veiInt > 8) return false;
+      if (veiInt == null || veiInt < 0 || veiInt > 8) {
+        return IsValidFormInput.volanic_invalid_vei;
+      }
     }
     
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 
@@ -591,17 +640,18 @@ class VolcanicNonEruptiveSection extends VolcanicBaseSection {
   }
 
   @override
-  bool isValid() {
-    if (!super.isValid()) return false;
+  IsValidFormInput isValid() {
+    final baseValid = super.isValid();
+    if (baseValid != IsValidFormInput.valid) return baseValid;
     
     final numericFields = [groundDeformationMm, so2Flux, fumaroleTemperature];
     for (var field in numericFields) {
       if (field != null && field.isNotEmpty && double.tryParse(field) == null) {
-        return false;
+        return IsValidFormInput.invalid_double;
       }
     }
     
-    return true;
+    return IsValidFormInput.valid;
   }
 }
 

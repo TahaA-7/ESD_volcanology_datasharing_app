@@ -46,7 +46,8 @@ class BasicDetailsValidator extends StepValidator {
 class LocationValidator extends StepValidator {
   @override
   bool validate(EventPostWizardController controller) {
-    return controller.location.isValid(); 
+    if (controller.durationTime.isValid() == IsValidFormInput.valid) return true;
+    return false;
   }
   
   @override
@@ -58,80 +59,56 @@ class LocationValidator extends StepValidator {
 class TimeRangeValidator extends StepValidator {
   @override
   bool validate(EventPostWizardController controller) {
-    // if (controller.startTime == null || controller.endTime == null) return true;
-    // return !controller.startTime!.isAfter(controller.endTime!);
-    return controller.durationTime.isValid();
+    if (controller.durationTime.isValid() == IsValidFormInput.valid) return true;
+    return false;
   }
 
   @override
   String? getErrorMessage(EventPostWizardController controller) {
-    return 'Start time must precede end time';
+    switch (controller.durationTime.isValid()) {
+      case IsValidFormInput.valid:
+        return null;
+      case IsValidFormInput.invalid_integer:
+        return 'Duration fields must be numerical and cannot include alphabetical characters';
+      case IsValidFormInput.starttime_after_endtime:
+        return 'Start time must precede end time';
+      case IsValidFormInput.timerange_duration_mismatch:
+        return 'Duration does not match the time range between start and end times';
+      case IsValidFormInput.unallowed_time_nullables:
+        return 'Submit a start date-time and/or end date-time';
+      default:
+        return 'Invalid time range';
+    }
   }
 }
 
-class EventTypeDetailsValidator extends StepValidator {  // extend
+class EventTypeDetailsValidator extends StepValidator {
   @override
-  bool validate(EventPostWizardController controller){
-    switch (controller.eventType) {
-      case EventType.anthropogenic:
-        if (_isValidDouble(controller.anthropogenic.explosiveYieldKg) == false) return false;
-        if (_isValidBool(controller.anthropogenic.isConfirmedIntentional) == false) return false;
-        return true;
-      case EventType.atmospheric_coupledSignals:
-        if (_isValidDouble(controller.atmospheric.peakOverpressurePa) == false) return false;
-        if (_isValidDouble(controller.atmospheric.altitudeKm) == false) return false;
-        if (_isValidDouble(controller.atmospheric.estimatedEnergyJoules) == false) return false;
-        return true;
-      case EventType.cryoseismic_glacial:
-        if (_isValidDouble(controller.cryoseismic.iceThicknessMeters) == false) return false;
-        if (_isValidDouble(controller.cryoseismic.airTemperatureCelsius) == false) return false;
-        if (_isValidDouble(controller.cryoseismic.crackLengthMeters) == false) return false;
-        return true;
-      case EventType.geodetic_deformation:
-        if (_isValidDouble(controller.geodetic.displacementNorthMm) == false) return false;
-        if (_isValidDouble(controller.geodetic.displacementEastMm) == false) return false;
-        if (_isValidDouble(controller.geodetic.displacementVerticalMm) == false) return false;
-        return true;
-      case EventType.hydrothermal_fluidDriven:
-        if (_isValidDouble(controller.hydrothermal.waterTemperatureCelsius) == false) return false;
-        if (_isValidDouble(controller.hydrothermal.phLevel) == false) return false;
-        if (_isValidDouble(controller.hydrothermal.dischargeRateLitersPerSec) == false) return false;
-        if (_isValidBool(controller.hydrothermal.eruptionOccurred) == false) return false;
-        return true;
-      case EventType.massMovement_surfaceInstability:
-        if (_isValidDouble(controller.massMovement.volumeM3) == false) return false;
-        if (_isValidDouble(controller.massMovement.velocityMetersPerSecond) == false) return false;
-        if (_isValidDouble(controller.massMovement.runoutDistanceMeters) == false) return false;
-        if (_isValidDouble(controller.massMovement.slopeAngleDegrees) == false) return false;
-        if (_isValidBool(controller.massMovement.secondaryHazard) == false) return false;
-        return true;
-      case EventType.seismic_tectonic:
-        if (_isValidDouble(controller.seismic.magnitude) == false) return false;
-        if (_isValidDouble(controller.seismic.magnitudeType) == false) return false;
-        if (_isValidDouble(controller.seismic.depth) == false) return false;
-        if (_isValidDouble(controller.seismic.depthUncertainty) == false) return false;
-        return true;
-      case EventType.volcanicEruptive_surfaceProcess:
-        if (_isValidDouble(controller.volcanicEruptive.elevation) == false) return false;
-
-        if (_isValidDouble(controller.volcanicEruptive.plumeHeightMeters) == false) return false;
-        if (_isValidInt(controller.volcanicEruptive.vei) == false) return false;
-        return true;
-      case EventType.volcanicNonEruptive:
-        if (_isValidDouble(controller.volcanicNonEruptive.elevation) == false) return false;
-
-        if (_isValidDouble(controller.volcanicNonEruptive.groundDeformationMm) == false) return false;
-        if (_isValidDouble(controller.volcanicNonEruptive.so2Flux) == false) return false;
-        if (_isValidDouble(controller.volcanicNonEruptive.fumaroleTemperature) == false) return false;
-        return true;
-      case _:
-        return true;
-    }
-    return true;
+  bool validate(EventPostWizardController controller) {
+    final activeSection = controller.getActiveEventSection();
+    if (activeSection == null) return true;
+    return activeSection.isValid() == IsValidFormInput.valid;
   }
+
   @override
   String? getErrorMessage(EventPostWizardController controller) {
-    return 'Be sure to enter details in their right format (e.g. a number cannot have alphabetical characters)';
+    final activeSection = controller.getActiveEventSection();
+    if (activeSection == null) return null;
+    
+    final validationResult = activeSection.isValid();
+    
+    switch (validationResult) {
+      case IsValidFormInput.valid:
+        return null;
+      case IsValidFormInput.invalid_double:
+        return 'Numeric fields must contain valid decimal numbers';
+      case IsValidFormInput.invalid_integer:
+        return 'Integer fields must contain valid whole numbers';
+      case IsValidFormInput.volanic_invalid_vei:
+        return 'VEI must be an integer between 0 and 8';
+      default:
+        return 'Please ensure all fields are filled in correctly';
+    }
   }
 }
 
@@ -139,6 +116,7 @@ class ExtraDetailsValidator extends StepValidator {
   @override
   bool validate(EventPostWizardController controller) {return true;}
   @override
+  // for now this method is completely useless and will never be called, but that could perhaps change in the future
   String? getErrorMessage(EventPostWizardController controller) {
     return 'Be sure to enter details in their right format (e.g. a number cannot have alphabetical characters)';
   }
@@ -148,6 +126,7 @@ class UploadValidator extends StepValidator {
   @override
   bool validate(EventPostWizardController controller) {return true;}
   @override
+  // also a useless method for now as there are no extra steps (uploading media = not implemented)
   String? getErrorMessage(EventPostWizardController controller) {
     return '';
   }
