@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:seismology_volcanology_datasharing_app/screens/event_post_landing_screen.dart';
 import '../screens/event_post_wizard.dart';
+import 'download_widget.dart';
 
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
@@ -139,7 +140,19 @@ class _FilterBarState extends State<FilterBar> {
 
               _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
               _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
-              _iconButton(Icons.download_outlined, 'Export', onPressed: () {}),
+              _iconButton(
+                Icons.download_outlined, 
+                'Export', 
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => DownloadWidget(
+                      events: [], // not implemented
+                      onClose: () => Navigator.of(context).pop(),
+                    ),
+                  );
+                },
+              ),
               _iconButton(
                 Icons.post_add,
                 'Post',
