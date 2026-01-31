@@ -1,5 +1,7 @@
 import 'package:latlong2/latlong.dart';
 import '../models/event_post_model.dart';
+import 'package:geocoding/geocoding.dart';
+import 'dart:math' as math;
 
 class GeocodingHelper {
   // Basic country center coordinates (approximate)
@@ -103,5 +105,114 @@ class GeocodingHelper {
     }
 
     return null;
+  }
+
+  static Future<LatLng?> geocodeLocation(String locationQuery) async {
+    if (locationQuery.trim().isEmpty) return null;
+
+    try {
+      List<Location> locations = await locationFromAddress(locationQuery);
+      
+      if (locations.isNotEmpty) {
+        return LatLng(locations.first.latitude, locations.first.longitude);
+      }
+    } catch (e) {
+      print('Geocoding failed for "$locationQuery": $e');
+    }
+    
+    return null;
+  }
+
+  /// Build a location query string from filter components
+  static String buildLocationQuery({
+    String? city,
+    String? province,
+    String? country,
+  }) {
+    final parts = <String>[];
+    
+    if (city != null && city.isNotEmpty) parts.add(city);
+    if (province != null && province.isNotEmpty) parts.add(province);
+    if (country != null && country.isNotEmpty) parts.add(country);
+    
+    return parts.join(', ');
+  }
+
+  /// Check if event matches location filters
+  static bool eventMatchesLocation(
+    Event event, {
+    String? countryFilter,
+    String? cityFilter,
+    String? provinceFilter,
+  }) {
+    // Country filter
+    if (countryFilter != null && countryFilter.isNotEmpty) {
+      final eventCountry = event.country.name.toLowerCase();
+      if (!eventCountry.contains(countryFilter.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // City filter
+    if (cityFilter != null && cityFilter.isNotEmpty) {
+      if (!event.townCity.toLowerCase().contains(cityFilter.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // Province filter
+    if (provinceFilter != null && provinceFilter.isNotEmpty) {
+      if (!event.stateProvince.toLowerCase().contains(provinceFilter.toLowerCase())) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /// Check if event is within distance from a point
+  static bool eventWithinDistance(
+    Event event,
+    LatLng centerPoint,
+    double radiusKm,
+  ) {
+    final eventCoords = getCoordinatesForEvent(event);
+    if (eventCoords == null) return false;
+
+    final distance = _calculateDistance(
+      centerPoint.latitude,
+      centerPoint.longitude,
+      eventCoords.latitude,
+      eventCoords.longitude,
+    );
+
+    return distance <= radiusKm;
+  }
+
+  /// Calculate distance between two points using Haversine formula
+  static double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadius = 6371; // km
+
+    final dLat = _toRadians(lat2 - lat1);
+    final dLon = _toRadians(lon2 - lon1);
+
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_toRadians(lat1)) *
+            math.cos(_toRadians(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+
+    return earthRadius * c;
+  }
+
+  static double _toRadians(double degrees) {
+    return degrees * (math.pi / 180);
   }
 }

@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:seismology_volcanology_datasharing_app/screens/event_post_landing_screen.dart';
-// import '../controllers/event_post_wizard_controller.dart';
 import '../screens/event_post_wizard.dart';
 
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
-  final Function(String)? onQuickTimeSelected;
+  final Function(String?)? onQuickTimeSelected;
+  final Function({
+    String? country,
+    String? city,
+    String? province,
+    double? latitude,
+    double? longitude,
+  })? onLocationFiltersChanged;
   final Future<void> Function()? onEventPosted;
   
   const FilterBar({
     super.key,
     this.onTimeRangeChanged,
     this.onQuickTimeSelected,
+    this.onLocationFiltersChanged,
     this.onEventPosted,
   });
 
@@ -23,7 +30,7 @@ class FilterBar extends StatefulWidget {
 class _FilterBarState extends State<FilterBar> {
   bool _showFilters = true;
   bool _expandedFilters = false;
-  String _selectedQuickTime = '1d';
+  String _selectedQuickTime = 'all';
   DateTime? _fromDate;
   DateTime? _toDate;
   double _timeAdjusterValue = 0.5;
@@ -54,6 +61,7 @@ class _FilterBarState extends State<FilterBar> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _countryController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _provinceController = TextEditingController();
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
   final TextEditingController _distanceController = TextEditingController();
@@ -64,11 +72,22 @@ class _FilterBarState extends State<FilterBar> {
     _searchController.dispose();
     _countryController.dispose();
     _cityController.dispose();
+    _provinceController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
     _distanceController.dispose();
     _gpsDistanceController.dispose();
     super.dispose();
+  }
+
+  void _notifyLocationFiltersChanged() {
+    widget.onLocationFiltersChanged?.call(
+      country: _countryController.text.isEmpty ? null : _countryController.text,
+      city: _cityController.text.isEmpty ? null : _cityController.text,
+      province: _provinceController.text.isEmpty ? null : _provinceController.text,
+      latitude: _latitudeController.text.isEmpty ? null : double.tryParse(_latitudeController.text),
+      longitude: _longitudeController.text.isEmpty ? null : double.tryParse(_longitudeController.text),
+    );
   }
 
   @override
@@ -124,26 +143,14 @@ class _FilterBarState extends State<FilterBar> {
               _iconButton(
                 Icons.post_add,
                 'Post',
-                // onPressed: () {
-                //   Navigator.of(context).push(
                 onPressed: () async {
                   await Navigator.of(context).push(
                     MaterialPageRoute(
                       fullscreenDialog: true,
                       builder: (_) => ChangeNotifierProvider(
                         create: (_) => EventPostWizardController(),
-                        // child: const EventPostWizardScreen(),
                         child: const EventPostLandingScreen(),
                       ),
-            // BACKUP FOR IF FLUTTER PROVIDER PACKAGE DOESN'T WORK ANYMORE --- DO NOT REMOVE
-            // _iconButton(
-            //   Icons.post_add,
-            //   'Post',
-            //   onPressed: () {
-            //     Navigator.of(context).push(
-            //       MaterialPageRoute(
-            //         fullscreenDialog: true,
-            //         builder: (_) => const EventPostWizardScreen(),
                     ),
                   );
                   widget.onEventPosted?.call();
@@ -166,7 +173,6 @@ class _FilterBarState extends State<FilterBar> {
     );
   }
 
-
   Widget _filterPanel() {
     return Container(
       width: double.infinity,
@@ -182,95 +188,94 @@ class _FilterBarState extends State<FilterBar> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-          // FIRST ROW - Always visible
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // TIME FILTERS/SETTINGS
-              Expanded(
-                flex: 2,
-                child: _timeFiltersSection(),
+              // FIRST ROW - Always visible
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // TIME FILTERS/SETTINGS
+                  Expanded(
+                    flex: 2,
+                    child: _timeFiltersSection(),
+                  ),
+
+                  _verticalDivider(),
+
+                  // QUICK TIME SELECTION
+                  Expanded(
+                    flex: 2,
+                    child: _quickTimeSection(),
+                  ),
+
+                  _verticalDivider(),
+
+                  // TIME ADJUSTER
+                  Expanded(
+                    flex: 2,
+                    child: _timeAdjusterSection(),
+                  ),
+
+                  _verticalDivider(),
+
+                  // SPATIAL FILTERS PREVIEW
+                  Expanded(
+                    flex: 2,
+                    child: _spatialFiltersPreview(),
+                  ),
+                ],
               ),
-
-              _verticalDivider(),
-
-              // QUICK TIME SELECTION
-              Expanded(
-                flex: 2,
-                child: _quickTimeSection(),
-              ),
-
-              _verticalDivider(),
-
-              // TIME ADJUSTER
-              Expanded(
-                flex: 2,
-                child: _timeAdjusterSection(),
-              ),
-
-              _verticalDivider(),
-
-              // SPATIAL FILTERS PREVIEW
-              Expanded(
-                flex: 2,
-                child: _spatialFiltersPreview(),
-              ),
-            ],
-          ),
-          
-          // EXPAND/COLLAPSE BUTTON
-          const SizedBox(height: 12),
-          Center(
-            child: IconButton(
-              onPressed: () {
-                setState(() {
-                  _expandedFilters = !_expandedFilters;
-                });
-              },
-              icon: Icon(
-                _expandedFilters ? Icons.pause : Icons.pause,
-                size: 32,
-              ),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.grey[400],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              
+              // EXPAND/COLLAPSE BUTTON
+              const SizedBox(height: 12),
+              Center(
+                child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _expandedFilters = !_expandedFilters;
+                    });
+                  },
+                  icon: Icon(
+                    _expandedFilters ? Icons.pause : Icons.pause,
+                    size: 32,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey[400],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          
-          // EXPANDED SECTION
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 300),
-            crossFadeState: _expandedFilters
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: _expandedSection(),
-            secondChild: const SizedBox.shrink(),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // RESET BUTTON
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _resetFilters,
-              icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('Reset all to default'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[700],
+              
+              // EXPANDED SECTION
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 300),
+                crossFadeState: _expandedFilters
+                    ? CrossFadeState.showFirst
+                    : CrossFadeState.showSecond,
+                firstChild: _expandedSection(),
+                secondChild: const SizedBox.shrink(),
               ),
-            ),
-          ),
+              
+              const SizedBox(height: 12),
+              
+              // RESET BUTTON
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _resetFilters,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Reset all to default'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey[700],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
-
 
   Widget _expandedSection() {
     return Padding(
@@ -326,7 +331,6 @@ class _FilterBarState extends State<FilterBar> {
     );
   }
 
-
   Widget _timeFiltersSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,7 +369,13 @@ class _FilterBarState extends State<FilterBar> {
         ),
         const SizedBox(height: 8),
         TextButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            setState(() {
+              _fromDate = null;
+              _toDate = null;
+            });
+            widget.onTimeRangeChanged?.call(null, null);
+          },
           icon: const Icon(Icons.refresh, size: 12),
           label: const Text('Reset to default', style: TextStyle(fontSize: 11)),
           style: TextButton.styleFrom(
@@ -425,15 +435,14 @@ class _FilterBarState extends State<FilterBar> {
         Wrap(
           spacing: 4,
           runSpacing: 4,
-          children: ['1h', '3h', '6h', '12h', '1d', '3d', '1w'].map((time) {
+          children: ['1h', '3h', '6h', '12h', '1d', '3d', '1w', '2w'].map((time) {
             final isSelected = _selectedQuickTime == time;
             return InkWell(
               onTap: () {
                 setState(() {
                   _selectedQuickTime = time;
                 });
-                // Notify parent widget about quick time selection
-                widget.onQuickTimeSelected?.call(time);
+                widget.onQuickTimeSelected?.call(time == 'all' ? null : time);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -523,7 +532,16 @@ class _FilterBarState extends State<FilterBar> {
         ),
         const SizedBox(height: 12),
         TextButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            setState(() {
+              _countryController.clear();
+              _cityController.clear();
+              _provinceController.clear();
+              _latitudeController.clear();
+              _longitudeController.clear();
+            });
+            _notifyLocationFiltersChanged();
+          },
           icon: const Icon(Icons.refresh, size: 12),
           label: const Text('Reset to default', style: TextStyle(fontSize: 11)),
           style: TextButton.styleFrom(
@@ -548,11 +566,19 @@ class _FilterBarState extends State<FilterBar> {
         Row(
           children: [
             Expanded(
-              child: _textField(_countryController, 'country'),
+              child: _textField(
+                _countryController, 
+                'country',
+                onChanged: (_) => _notifyLocationFiltersChanged(),
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _textField(_cityController, 'city/town'),
+              child: _textField(
+                _cityController, 
+                'city/town',
+                onChanged: (_) => _notifyLocationFiltersChanged(),
+              ),
             ),
           ],
         ),
@@ -560,11 +586,33 @@ class _FilterBarState extends State<FilterBar> {
         Row(
           children: [
             Expanded(
-              child: _textField(_latitudeController, 'latitude - latitude...'),
+              child: _textField(
+                _provinceController, 
+                'State/Province',
+                onChanged: (_) => _notifyLocationFiltersChanged(),
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _textField(_longitudeController, 'longitude - latitude...'),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _textField(
+                      _latitudeController, 
+                      'latitude',
+                      onChanged: (_) => _notifyLocationFiltersChanged(),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: _textField(
+                      _longitudeController, 
+                      'longitude',
+                      onChanged: (_) => _notifyLocationFiltersChanged(),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -629,7 +677,7 @@ class _FilterBarState extends State<FilterBar> {
             contentPadding: EdgeInsets.zero,
             controlAffinity: ListTileControlAffinity.leading,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -763,9 +811,14 @@ class _FilterBarState extends State<FilterBar> {
     );
   }
 
-  Widget _textField(TextEditingController controller, String hint) {
+  Widget _textField(
+    TextEditingController controller, 
+    String hint, {
+    ValueChanged<String>? onChanged,
+  }) {
     return TextField(
       controller: controller,
+      onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(fontSize: 11, color: Colors.grey[600]),
@@ -836,7 +889,6 @@ class _FilterBarState extends State<FilterBar> {
         }
       });
       
-      // Notify parent widget about the change
       widget.onTimeRangeChanged?.call(_fromDate, _toDate);
     }
   }
@@ -850,7 +902,8 @@ class _FilterBarState extends State<FilterBar> {
     );
   }
 
-  Widget _iconButton(IconData icon,
+  Widget _iconButton(
+    IconData icon,
     String label, {
     required VoidCallback onPressed,
   }) {
@@ -864,16 +917,16 @@ class _FilterBarState extends State<FilterBar> {
     );
   }
 
-
   void _resetFilters() {
     setState(() {
-      _selectedQuickTime = '1d';
+      _selectedQuickTime = 'all';
       _fromDate = null;
       _toDate = null;
       _timeAdjusterValue = 0.5;
       _searchController.clear();
       _countryController.clear();
       _cityController.clear();
+      _provinceController.clear();
       _latitudeController.clear();
       _longitudeController.clear();
       _distanceController.clear();
@@ -885,5 +938,16 @@ class _FilterBarState extends State<FilterBar> {
                                              key == 'mass movement / surface instability');
       _geospatialCategories.updateAll((key, value) => true);
     });
+    
+    widget.onTimeRangeChanged?.call(null, null);
+    widget.onQuickTimeSelected?.call(null);
+    widget.onLocationFiltersChanged?.call(
+      country: null,
+      city: null,
+      province: null,
+      latitude: null,
+      longitude: null,
+    );
+    // _notifyLocationFiltersChanged();
   }
 }

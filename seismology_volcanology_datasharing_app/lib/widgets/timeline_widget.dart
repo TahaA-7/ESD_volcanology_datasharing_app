@@ -3,15 +3,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
-
-// Use existing event post model (no changes to model)
 import '../models/event_post_model.dart';
+import 'event_details_dialog.dart';
 
 class TimelineWidget extends StatefulWidget {
   final DateTime? filterFromDate;
   final DateTime? filterToDate;
   final String? quickTimeFilter;
-  final List<Event>? events; // posted events to display
+  final List<Event>? events;
 
   const TimelineWidget({
     super.key,
@@ -36,14 +35,15 @@ class _TimelineWidgetState extends State<TimelineWidget> {
   DateTime? _dragStartTime;
   DateTime? _dragEndTime;
 
+  // Hover state
+  Offset? _mousePosition;
+  Event? _hoveredEvent;
+
   @override
   void initState() {
     super.initState();
-    // Set the absolute range: 2010 to now
     _minDate = DateTime(2010, 1, 1);
     _maxDate = DateTime.now();
-
-    // Initialize to show today by default
     _initializeToday();
   }
 
@@ -51,7 +51,6 @@ class _TimelineWidgetState extends State<TimelineWidget> {
   void didUpdateWidget(TimelineWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Apply filters when they change
     if (widget.quickTimeFilter != null &&
         widget.quickTimeFilter != oldWidget.quickTimeFilter) {
       _applyQuickTimeFilter(widget.quickTimeFilter!);
@@ -61,7 +60,6 @@ class _TimelineWidgetState extends State<TimelineWidget> {
       _applyCustomDateFilter();
     }
 
-    // If events reference changed, trigger repaint by calling setState
     if (widget.events != oldWidget.events) {
       setState(() {});
     }
@@ -111,11 +109,9 @@ class _TimelineWidgetState extends State<TimelineWidget> {
       if (widget.filterToDate != null) {
         _endTime = widget.filterToDate!;
       } else {
-        // If no end date specified, use now
         _endTime = DateTime.now();
       }
 
-      // Ensure we have a valid range
       if (_startTime.isAfter(_endTime)) {
         final temp = _startTime;
         _startTime = _endTime;
@@ -126,9 +122,7 @@ class _TimelineWidgetState extends State<TimelineWidget> {
 
   void _initializeToday() {
     final now = DateTime.now();
-    // Start at beginning of today
     _startTime = DateTime(now.year, now.month, now.day, 0, 0);
-    // End at end of today
     _endTime = DateTime(now.year, now.month, now.day, 23, 59, 59);
   }
 
@@ -157,7 +151,6 @@ class _TimelineWidgetState extends State<TimelineWidget> {
   }
 
   void _zoomOut() {
-    // Show more time range (e.g., 3 days)
     setState(() {
       _startTime = _startTime.subtract(const Duration(days: 1));
       _endTime = _endTime.add(const Duration(days: 1));
@@ -165,7 +158,6 @@ class _TimelineWidgetState extends State<TimelineWidget> {
   }
 
   void _zoomIn() {
-    // Show less time range
     final duration = _endTime.difference(_startTime);
     if (duration.inHours > 12) {
       setState(() {
@@ -187,14 +179,12 @@ class _TimelineWidgetState extends State<TimelineWidget> {
     final dragDelta = details.localPosition.dx - _dragStartX!;
     final duration = _dragEndTime!.difference(_dragStartTime!);
 
-    // Calculate how much time the drag represents
-    final dragRatio = -dragDelta / timelineWidth; // Negative so dragging right goes back in time
+    final dragRatio = -dragDelta / timelineWidth;
     final timeDelta = Duration(milliseconds: (duration.inMilliseconds * dragRatio).round());
 
     var newStart = _dragStartTime!.add(timeDelta);
     var newEnd = _dragEndTime!.add(timeDelta);
 
-    // Clamp to min/max dates
     if (newStart.isBefore(_minDate)) {
       final diff = _minDate.difference(newStart);
       newStart = _minDate;
@@ -231,7 +221,6 @@ class _TimelineWidgetState extends State<TimelineWidget> {
 
     return Column(
       children: [
-        // Navigation controls
         Container(
           padding: const EdgeInsets.all(8),
           color: Colors.grey[200],
@@ -284,20 +273,48 @@ class _TimelineWidgetState extends State<TimelineWidget> {
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              return GestureDetector(
-                onPanStart: _onPanStart,
-                onPanUpdate: (details) => _onPanUpdate(details, constraints.maxWidth),
-                onPanEnd: _onPanEnd,
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.grab,
-                  child: CustomPaint(
-                    painter: TimelinePainter(
-                      startTime: _startTime,
-                      endTime: _endTime,
-                      events: widget.events ?? const [],
+              return MouseRegion(
+                onHover: (event) {
+                  setState(() {
+                    _mousePosition = event.localPosition;
+                    _hoveredEvent = _getEventAtPosition(event.localPosition, constraints.biggest);
+                  });
+                },
+                onExit: (event) {
+                  setState(() {
+                    _mousePosition = null;
+                    _hoveredEvent = null;
+                  });
+                },
+                child: Stack(
+                  children: [
+                    GestureDetector(
+                      onPanStart: _onPanStart,
+                      onPanUpdate: (details) => _onPanUpdate(details, constraints.maxWidth),
+                      onPanEnd: _onPanEnd,
+                      onTapUp: (details) {
+                        final event = _getEventAtPosition(details.localPosition, constraints.biggest);
+                        if (event != null) {
+                          _showEventDetails(event);
+                        }
+                      },
+                      child: CustomPaint(
+                        painter: TimelinePainter(
+                          startTime: _startTime,
+                          endTime: _endTime,
+                          events: widget.events ?? const [],
+                          hoveredEvent: _hoveredEvent,
+                        ),
+                        child: Container(),
+                      ),
                     ),
-                    child: Container(),
-                  ),
+                    if (_hoveredEvent != null && _mousePosition != null)
+                      Positioned(
+                        left: _mousePosition!.dx + 15,
+                        top: _mousePosition!.dy - 10,
+                        child: _buildTooltip(_hoveredEvent!),
+                      ),
+                  ],
                 ),
               );
             },
@@ -306,17 +323,168 @@ class _TimelineWidgetState extends State<TimelineWidget> {
       ],
     );
   }
+
+  Event? _getEventAtPosition(Offset position, Size size) {
+    final durationMs = _endTime.difference(_startTime).inMilliseconds;
+    if (durationMs <= 0) return null;
+
+    final double topPadding = 20;
+    final double barHeight = 24;
+    final double verticalSpacing = 4;
+
+    final sortedEvents = List<Event>.from(widget.events ?? [])
+      ..sort((a, b) {
+        final aDur = a.timeRange?.duration.inMilliseconds ?? a.duration.inMilliseconds;
+        final bDur = b.timeRange?.duration.inMilliseconds ?? b.duration.inMilliseconds;
+        return bDur.compareTo(aDur);
+      });
+
+    final List<DateTime?> laneEndTimes = [];
+
+    for (var ev in sortedEvents) {
+      DateTime? eventStart;
+      DateTime? eventEnd;
+      
+      if (ev.timeRange != null) {
+        eventStart = ev.timeRange!.start;
+        eventEnd = ev.timeRange!.end;
+      } else if (ev.startTime != null) {
+        eventStart = ev.startTime;
+        eventEnd = ev.startTime!.add(ev.duration);
+      }
+      
+      if (eventStart == null || eventEnd == null) continue;
+      if (eventEnd.isBefore(_startTime) || eventStart.isAfter(_endTime)) continue;
+
+      final visibleStart = eventStart.isBefore(_startTime) ? _startTime : eventStart;
+      final visibleEnd = eventEnd.isAfter(_endTime) ? _endTime : eventEnd;
+
+      final startRatio = visibleStart.difference(_startTime).inMilliseconds / durationMs;
+      final endRatio = visibleEnd.difference(_startTime).inMilliseconds / durationMs;
+      
+      final x = (startRatio * size.width).clamp(0.0, size.width);
+      final width = ((endRatio - startRatio) * size.width).clamp(2.0, size.width - x);
+
+      int laneIndex = 0;
+      while (laneIndex < laneEndTimes.length) {
+        if (laneEndTimes[laneIndex] == null || 
+            laneEndTimes[laneIndex]!.isBefore(visibleStart)) {
+          break;
+        }
+        laneIndex++;
+      }
+      
+      while (laneIndex >= laneEndTimes.length) {
+        laneEndTimes.add(null);
+      }
+      
+      laneEndTimes[laneIndex] = visibleEnd;
+      
+      final y = topPadding + (laneIndex * (barHeight + verticalSpacing));
+
+      final rect = Rect.fromLTWH(x, y, width, barHeight);
+      if (rect.contains(position)) {
+        return ev;
+      }
+    }
+
+    return null;
+  }
+
+  void _showEventDetails(Event event) {
+    showDialog(
+      context: context,
+      builder: (context) => EventDetailsDialog(event: event),
+    );
+  }
+
+  Widget _buildTooltip(Event event) {
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 250),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              event.eventType.name.replaceAll('_', ' '),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Colors.white,
+              ),
+            ),
+            if (event.source.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Source: ${event.source}',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ],
+            if (event.townCity.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Location: ${event.townCity}${event.country != Country.unspecified ? ', ${event.country.name}' : ''}',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ],
+            if (event.startTime != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Time: ${dateFormat.format(event.startTime!)}',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ],
+            if (event.duration.inMinutes > 0) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Duration: ${_formatDuration(event.duration)}',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    if (duration.inDays > 0) {
+      return '${duration.inDays}d ${duration.inHours % 24}h';
+    } else if (duration.inHours > 0) {
+      return '${duration.inHours}h ${duration.inMinutes % 60}m';
+    } else {
+      return '${duration.inMinutes}m';
+    }
+  }
 }
 
 class TimelinePainter extends CustomPainter {
   final DateTime startTime;
   final DateTime endTime;
   final List<Event> events;
+  final Event? hoveredEvent;
 
   TimelinePainter({
     required this.startTime,
     required this.endTime,
     this.events = const [],
+    this.hoveredEvent,
   });
 
   @override
@@ -329,11 +497,9 @@ class TimelinePainter extends CustomPainter {
       textAlign: TextAlign.center,
     );
 
-    // Calculate time span
     final duration = endTime.difference(startTime);
     final isMultiDay = duration.inHours > 24;
 
-    // Draw timeline background - WHITE
     final bgPaint = Paint()..color = Colors.white;
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
@@ -346,11 +512,8 @@ class TimelinePainter extends CustomPainter {
       _drawSingleDayTimeline(canvas, size, paint, textPainter);
     }
 
-    // Draw posted events (fallback to sample if none)
     if (events.isNotEmpty) {
       _drawEvents(canvas, size, textPainter);
-    // } else {
-    //   _drawSampleEvents(canvas, size);
     }
   }
 
@@ -359,19 +522,16 @@ class TimelinePainter extends CustomPainter {
     final hours = duration.inHours + 1;
     final hourWidth = size.width / hours;
 
-    // Draw hour markers and labels
     for (int i = 0; i <= hours; i++) {
       final x = i * hourWidth;
       final currentTime = startTime.add(Duration(hours: i));
 
-      // Draw vertical line
       canvas.drawLine(
         Offset(x, 0),
         Offset(x, size.height - 60),
         paint,
       );
 
-      // Draw hour label (BOTTOM)
       final hourText = DateFormat('HH:mm').format(currentTime);
       textPainter.text = TextSpan(
         text: hourText,
@@ -387,7 +547,6 @@ class TimelinePainter extends CustomPainter {
         Offset(x - textPainter.width / 2, size.height - 55),
       );
 
-      // Draw "start" label at beginning
       if (i == 0) {
         textPainter.text = const TextSpan(
           text: 'start',
@@ -404,7 +563,6 @@ class TimelinePainter extends CustomPainter {
         );
       }
 
-      // Draw "end" label at end
       if (i == hours) {
         textPainter.text = const TextSpan(
           text: 'end',
@@ -422,7 +580,6 @@ class TimelinePainter extends CustomPainter {
       }
     }
 
-    // Draw date label at bottom center
     final dateText = DateFormat('dd-MM-yyyy').format(startTime);
     textPainter.text = TextSpan(
       text: dateText,
@@ -447,7 +604,6 @@ class TimelinePainter extends CustomPainter {
     final days = duration.inDays + 1;
     final dayWidth = size.width / days;
 
-    // Draw day markers and labels
     for (int i = 0; i <= days; i++) {
       final x = i * dayWidth;
       final currentDate = DateTime(
@@ -456,14 +612,12 @@ class TimelinePainter extends CustomPainter {
         startTime.day + i,
       );
 
-      // Draw vertical line
       canvas.drawLine(
         Offset(x, 0),
         Offset(x, size.height - 60),
         paint,
       );
 
-      // Draw date label (BOTTOM)
       final dateText = DateFormat('dd/MM').format(currentDate);
       textPainter.text = TextSpan(
         text: dateText,
@@ -479,7 +633,6 @@ class TimelinePainter extends CustomPainter {
         Offset(x - textPainter.width / 2, size.height - 55),
       );
 
-      // Draw "start" label at beginning
       if (i == 0) {
         textPainter.text = const TextSpan(
           text: 'start',
@@ -496,7 +649,6 @@ class TimelinePainter extends CustomPainter {
         );
       }
 
-      // Draw "end" label at end
       if (i == days) {
         textPainter.text = const TextSpan(
           text: 'end',
@@ -514,7 +666,6 @@ class TimelinePainter extends CustomPainter {
       }
     }
 
-    // Draw date range at bottom center
     final dateRangeText = '${DateFormat('dd-MM-yyyy').format(startTime)} to ${DateFormat('dd-MM-yyyy').format(endTime)}';
     textPainter.text = TextSpan(
       text: dateRangeText,
@@ -532,47 +683,6 @@ class TimelinePainter extends CustomPainter {
         size.height - 30,
       ),
     );
-  }
-
-  void _drawSampleEvents(Canvas canvas, Size size) {
-    final eventPaint = Paint()..color = Colors.grey.shade500;
-
-    // Calculate time span for positioning events
-    final duration = endTime.difference(startTime);
-    final totalHours = max(1, duration.inHours); 
-
-    // Sample events at different times
-    final sample = [
-      {'start': 2, 'duration': 1.5, 'y': 0.3},
-      {'start': 4, 'duration': 0.8, 'y': 0.4},
-      {'start': 6, 'duration': 2.0, 'y': 0.25},
-      {'start': 10, 'duration': 1.2, 'y': 0.35},
-      {'start': 14, 'duration': 0.5, 'y': 0.45},
-      {'start': 16, 'duration': 1.8, 'y': 0.3},
-      {'start': 19, 'duration': 1.0, 'y': 0.4},
-    ];
-
-    for (var event in sample) {
-      final startHour = event['start'] as num;
-      final eventDuration = event['duration'] as num;
-      final yPosition = event['y'] as num;
-
-      // Only draw events that fit within current time range
-      if (startHour < totalHours) {
-        final x = (startHour / totalHours) * size.width;
-        final width = (eventDuration / totalHours) * size.width;
-        final y = size.height * yPosition;
-        final height = 20.0;
-
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(x, y, width, height),
-            const Radius.circular(4),
-          ),
-          eventPaint,
-        );
-      }
-    }
   }
 
   Color _colorForEventType(EventType t) {
@@ -603,23 +713,20 @@ class TimelinePainter extends CustomPainter {
     final durationMs = endTime.difference(startTime).inMilliseconds;
     if (durationMs <= 0) return;
 
-    // Sort events by duration (longest first) so they render behind shorter ones
     final sortedEvents = List<Event>.from(events)
       ..sort((a, b) {
         final aDur = a.timeRange?.duration.inMilliseconds ?? a.duration.inMilliseconds;
         final bDur = b.timeRange?.duration.inMilliseconds ?? b.duration.inMilliseconds;
-        return bDur.compareTo(aDur); // longest first
+        return bDur.compareTo(aDur);
       });
 
     final double topPadding = 20;
     final double barHeight = 24;
     final double verticalSpacing = 4;
     
-    // Track vertical lanes to avoid overlap
     final List<DateTime?> laneEndTimes = [];
 
     for (var ev in sortedEvents) {
-      // Get event start and end times
       DateTime? eventStart;
       DateTime? eventEnd;
       
@@ -634,18 +741,15 @@ class TimelinePainter extends CustomPainter {
       if (eventStart == null || eventEnd == null) continue;
       if (eventEnd.isBefore(startTime) || eventStart.isAfter(endTime)) continue;
 
-      // Clamp to visible range
       final visibleStart = eventStart.isBefore(startTime) ? startTime : eventStart;
       final visibleEnd = eventEnd.isAfter(endTime) ? endTime : eventEnd;
 
-      // Calculate positions
       final startRatio = visibleStart.difference(startTime).inMilliseconds / durationMs;
       final endRatio = visibleEnd.difference(startTime).inMilliseconds / durationMs;
       
       final x = (startRatio * size.width).clamp(0.0, size.width);
       final width = ((endRatio - startRatio) * size.width).clamp(2.0, size.width - x);
 
-      // Find available lane (vertical position)
       int laneIndex = 0;
       while (laneIndex < laneEndTimes.length) {
         if (laneEndTimes[laneIndex] == null || 
@@ -655,7 +759,6 @@ class TimelinePainter extends CustomPainter {
         laneIndex++;
       }
       
-      // Ensure we have enough lanes
       while (laneIndex >= laneEndTimes.length) {
         laneEndTimes.add(null);
       }
@@ -664,9 +767,11 @@ class TimelinePainter extends CustomPainter {
       
       final y = topPadding + (laneIndex * (barHeight + verticalSpacing));
 
-      // Draw event bar
+      final isHovered = hoveredEvent == ev;
+      final baseColor = _colorForEventType(ev.eventType);
+      
       final paint = Paint()
-        ..color = _colorForEventType(ev.eventType)
+        ..color = isHovered ? baseColor : baseColor.withOpacity(0.85)
         ..style = PaintingStyle.fill;
       
       final rect = RRect.fromRectAndRadius(
@@ -676,14 +781,12 @@ class TimelinePainter extends CustomPainter {
       
       canvas.drawRRect(rect, paint);
 
-      // Draw border
       final borderPaint = Paint()
-        ..color = _colorForEventType(ev.eventType).withOpacity(0.8)
+        ..color = isHovered ? Colors.white : baseColor.withOpacity(0.8)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
+        ..strokeWidth = isHovered ? 2.5 : 1.5;
       canvas.drawRRect(rect, borderPaint);
 
-      // Draw label if there's enough space
       if (width > 40) {
         final labelSource = (ev.source.isNotEmpty ? ev.source : ev.description);
         final label = (labelSource.isNotEmpty ? labelSource : ev.eventType.name);
@@ -709,11 +812,10 @@ class TimelinePainter extends CustomPainter {
     }
   }
 
-
   @override
   bool shouldRepaint(TimelinePainter oldDelegate) {
     if (oldDelegate.startTime != startTime || oldDelegate.endTime != endTime) return true;
-    // compare event ids to decide repaint
+    if (oldDelegate.hoveredEvent != hoveredEvent) return true;
     final oldIds = oldDelegate.events.map((e) => e.id).join(',');
     final newIds = events.map((e) => e.id).join(',');
     return oldIds != newIds;

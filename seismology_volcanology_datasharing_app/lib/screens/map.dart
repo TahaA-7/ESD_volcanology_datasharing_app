@@ -3,8 +3,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:math' as math;
 import '../widgets/legend.dart';
+import '../widgets/map_event_marker.dart';
+import '../widgets/map_cluster_marker.dart';
+import '../widgets/event_details_dialog.dart';
 import '../models/event_post_model.dart';
 import '../utils_services/event_storage.dart';
+import '../utils_services/event_cluster.dart'; 
 
 /// Map layers enum
 enum MapLayer {
@@ -89,7 +93,6 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void didUpdateWidget(MapScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update events when user passes new filtered events
     if (widget.events != null) {
       setState(() {
         _events = widget.events!;
@@ -99,14 +102,12 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _loadEvents() async {
-    // events posted by user
     if (widget.events != null) {
       setState(() {
         _events = widget.events!;
         _isLoading = false;
       });
     } else {
-      // load from storage
       final events = await EventStorage.loadEvents();
       setState(() {
         _events = events;
@@ -114,14 +115,6 @@ class _MapScreenState extends State<MapScreen> {
       });
     }
   }
-
-  // Future<void> _loadEvents() async {
-  //   final events = await EventStorage.loadEvents();
-  //   setState(() {
-  //     _events = events;
-  //     _isLoading = false;
-  //   });
-  // }
 
   void _startSelection(Offset position) {
     if (_selectionMode) {
@@ -220,132 +213,68 @@ class _MapScreenState extends State<MapScreen> {
     ];
   }
 
-  Color _getEventColor(EventType type) {
-    switch (type) {
-      case EventType.seismic_tectonic:
-        return Colors.red;
-      case EventType.volcanicEruptive_surfaceProcess:
-        return Colors.orange;
-      case EventType.volcanicNonEruptive:
-        return Colors.deepOrange;
-      case EventType.massMovement_surfaceInstability:
-        return Colors.brown;
-      case EventType.cryoseismic_glacial:
-        return Colors.lightBlue;
-      case EventType.hydrothermal_fluidDriven:
-        return Colors.blue;
-      case EventType.atmospheric_coupledSignals:
-        return Colors.purple;
-      case EventType.anthropogenic:
-        return Colors.grey;
-      case EventType.geodetic_deformation:
-        return Colors.green;
-      case EventType.multiSensor:
-        return Colors.teal;
-      case EventType.false_test:
-        return Colors.black;
-      case EventType.unspecified_anomalous:
-      default:
-        return Colors.yellow;
-    }
-  }
-
-  IconData _getEventIcon(EventType type) {
-    switch (type) {
-      case EventType.seismic_tectonic:
-        return Icons.waves;
-      case EventType.volcanicEruptive_surfaceProcess:
-      case EventType.volcanicNonEruptive:
-        return Icons.terrain;
-      case EventType.massMovement_surfaceInstability:
-        return Icons.landslide;
-      case EventType.cryoseismic_glacial:
-        return Icons.ac_unit;
-      case EventType.hydrothermal_fluidDriven:
-        return Icons.water_drop;
-      case EventType.atmospheric_coupledSignals:
-        return Icons.cloud;
-      case EventType.anthropogenic:
-        return Icons.construction;
-      case EventType.geodetic_deformation:
-        return Icons.compress;
-      case EventType.multiSensor:
-        return Icons.sensors;
-      case EventType.false_test:
-        return Icons.cancel;
-      case EventType.unspecified_anomalous:
-      default:
-        return Icons.help_outline;
-    }
+  double _calculateHaloSize(Event event) {
+    // Calculate halo size based on event duration
+    final duration = event.duration;
+    
+    if (duration.inDays > 7) return 100.0;
+    if (duration.inDays > 3) return 80.0;
+    if (duration.inDays > 1) return 65.0;
+    if (duration.inHours > 12) return 55.0;
+    if (duration.inHours > 6) return 50.0;
+    if (duration.inHours > 1) return 45.0;
+    
+    return 40.0; // Minimum size
   }
 
   List<Marker> _buildEventMarkers() {
-    return _events
-        .where((event) => event.latitude != null && event.longitude != null)
-        .map((event) {
-      final color = _getEventColor(event.eventType);
-      final icon = _getEventIcon(event.eventType);
+    // Cluster events based on zoom level
+    final clusters = EventClusterManager.clusterEvents(_events, _currentZoom);
 
-      return Marker(
-        point: LatLng(event.latitude!, event.longitude!),
-        width: 40,
-        height: 40,
-        child: GestureDetector(
-          onTap: () {
-            _showEventDetails(event);
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.8),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
+    return clusters.map((cluster) {
+      if (cluster.isCluster) {
+        // Multiple events - show cluster marker
+        return Marker(
+          point: cluster.center,
+          width: 80,
+          height: 80,
+          child: MapClusterMarker(
+            cluster: cluster,
+            onTap: () {
+              // Zoom in to cluster location
+              _mapController.move(
+                cluster.center,
+                _currentZoom + 2,
+              );
+            },
           ),
-        ),
-      );
+        );
+      } else {
+        // Single event - show regular marker with halo
+        final event = cluster.events.first;
+        final haloSize = _calculateHaloSize(event);
+        
+        return Marker(
+          point: cluster.center,
+          width: haloSize,
+          height: haloSize,
+          child: MapEventMarker(
+            data: EventMarkerData(
+              event: event,
+              position: cluster.center,
+              haloSize: haloSize,
+            ),
+            onTap: () => _showEventDetails(event),
+          ),
+        );
+      }
     }).toList();
   }
 
   void _showEventDetails(Event event) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(event.eventType.name.replaceAll('_', ' ')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (event.source.isNotEmpty)
-              Text('Source: ${event.source}'),
-            if (event.description.isNotEmpty)
-              Text('Description: ${event.description}'),
-            if (event.startTime != null)
-              Text('Start: ${event.startTime}'),
-            if (event.country != Country.unspecified)
-              Text('Country: ${event.country.name}'),
-            if (event.townCity.isNotEmpty)
-              Text('Location: ${event.townCity}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+      builder: (context) => EventDetailsDialog(event: event),
     );
   }
 
@@ -373,7 +302,9 @@ class _MapScreenState extends State<MapScreen> {
               initialCenter: const LatLng(0, 0),
               initialZoom: _currentZoom,
               onPositionChanged: (position, _) {
-                _currentZoom = position.zoom ?? _currentZoom;
+                setState(() {
+                  _currentZoom = position.zoom ?? _currentZoom;
+                });
               },
               interactionOptions: InteractionOptions(
                 flags: _selectionMode 
@@ -398,7 +329,6 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   ],
                 ),
-              // Event markers
               MarkerLayer(
                 markers: _buildEventMarkers(),
               ),

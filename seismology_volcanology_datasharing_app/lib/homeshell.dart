@@ -1,43 +1,53 @@
 import 'package:flutter/material.dart';
-import 'widgets/filter_bar.dart';
 import 'widgets/top_tabs.dart';
+import 'widgets/filter_bar.dart';
 
 class HomeShell extends StatelessWidget {
-  final Widget child;
   final HomeTab selectedTab;
-  final ValueChanged<HomeTab> onTabSelected;
+  final Function(HomeTab) onTabSelected;
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
-  final Function(String)? onQuickTimeSelected;
+  final Function(String?)? onQuickTimeSelected;
+  final Function({
+    String? country,
+    String? city,
+    String? province,
+    double? latitude,
+    double? longitude,
+  })? onLocationFiltersChanged;
   final Future<void> Function()? onEventPosted;
+  final Widget child;
 
   const HomeShell({
     super.key,
-    required this.child,
     required this.selectedTab,
     required this.onTabSelected,
+    required this.child,
     this.onTimeRangeChanged,
     this.onQuickTimeSelected,
+    this.onLocationFiltersChanged,
     this.onEventPosted,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEEDFD8),
-      body: Column(
-        children: [
-          const SizedBox(height: 16),
-          TopTabs(
-            selectedTab: selectedTab,
-            onTabSelected: onTabSelected,
-          ),
-          FilterBar(
-            onTimeRangeChanged: onTimeRangeChanged,
-            onQuickTimeSelected: onQuickTimeSelected,
-             onEventPosted: onEventPosted,
-          ),
-          Expanded(child: child),
-        ],
+      body: Container(
+        color: const Color(0xFFE5CFC7),
+        child: Column(
+          children: [
+            TopTabs(
+              selectedTab: selectedTab,
+              onTabSelected: onTabSelected,
+            ),
+            FilterBar(
+              onTimeRangeChanged: onTimeRangeChanged,
+              onQuickTimeSelected: onQuickTimeSelected,
+              onLocationFiltersChanged: onLocationFiltersChanged,
+              onEventPosted: onEventPosted,
+            ),
+            Expanded(child: child),
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'map.dart';
 import '../homeshell.dart';
 import '../widgets/top_tabs.dart';
@@ -6,6 +7,7 @@ import '../widgets/timeline_widget.dart';
 import '../widgets/eventlist_widget.dart';
 import '../models/event_post_model.dart';
 import '../utils_services/event_storage.dart';
+import '../utils_services/geocoding_helper.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,10 +19,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   HomeTab selectedTab = HomeTab.timeline;
 
-  // Filter state
+  // Time filter state
   DateTime? _filterFromDate;
   DateTime? _filterToDate;
   String? _quickTimeFilter;
+
+  // Location filter state
+  String? _countryFilter;
+  String? _cityFilter;
+  String? _provinceFilter;
+  double? _latitudeFilter;
+  double? _longitudeFilter;
 
   List<Event> _postedEvents = [];
   bool _isLoading = true;
@@ -48,27 +57,50 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _filterFromDate = fromDate;
       _filterToDate = toDate;
-      _quickTimeFilter = null; 
+      _quickTimeFilter = null;
     });
   }
 
-  void _handleQuickTimeSelected(String quickTime) {
+  void _handleQuickTimeSelected(String? quickTime) {
     setState(() {
       _quickTimeFilter = quickTime;
-      _filterFromDate = null; 
-      _filterToDate = null;
+      if (quickTime == null) {
+        _filterFromDate = null;
+        _filterToDate = null;
+      } else {
+        _filterFromDate = null;
+        _filterToDate = null;
+      }
     });
   }
 
-  // time filters to events
+  void _handleLocationFiltersChanged({
+    String? country,
+    String? city,
+    String? province,
+    double? latitude,
+    double? longitude,
+  }) {
+    setState(() {
+      _countryFilter = country;
+      _cityFilter = city;
+      _provinceFilter = province;
+      _latitudeFilter = latitude;
+      _longitudeFilter = longitude;
+    });
+  }
+
+  // Apply all filters to events
   List<Event> _getFilteredEvents() {
     if (_postedEvents.isEmpty) return [];
 
+    List<Event> filtered = List.from(_postedEvents);
+
+    //tijd filters
     DateTime? fromDate = _filterFromDate;
     DateTime? toDate = _filterToDate;
 
-    // quick time filter if set
-    if (_quickTimeFilter != null) {
+    if (_quickTimeFilter != null && _quickTimeFilter!.isNotEmpty) {
       final now = DateTime.now();
       switch (_quickTimeFilter) {
         case '1h':
@@ -106,27 +138,44 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    // If no filters, return all events
-    if (fromDate == null && toDate == null) {
-      return _postedEvents;
+    if (fromDate != null || toDate != null) {
+      filtered = filtered.where((event) {
+        if (event.startTime == null) return false;
+        final eventTime = event.startTime!;
+        
+        if (fromDate != null && eventTime.isBefore(fromDate)) {
+          return false;
+        }
+        
+        if (toDate != null && eventTime.isAfter(toDate)) {
+          return false;
+        }
+        
+        return true;
+      }).toList();
     }
 
-    // Filter events by date range
-    return _postedEvents.where((event) {
-      if (event.startTime == null) return false;
-      
-      final eventTime = event.startTime!;
-      
-      if (fromDate != null && eventTime.isBefore(fromDate)) {
-        return false;
-      }
-      
-      if (toDate != null && eventTime.isAfter(toDate)) {
-        return false;
-      }
-      
-      return true;
-    }).toList();
+    // Apply location filters
+    if (_countryFilter != null || _cityFilter != null || _provinceFilter != null) {
+      filtered = filtered.where((event) {
+        return GeocodingHelper.eventMatchesLocation(
+          event,
+          countryFilter: _countryFilter,
+          cityFilter: _cityFilter,
+          provinceFilter: _provinceFilter,
+        );
+      }).toList();
+    }
+
+    // coordinates filters
+    if (_latitudeFilter != null && _longitudeFilter != null) {
+      final centerPoint = LatLng(_latitudeFilter!, _longitudeFilter!);
+      filtered = filtered.where((event) {
+        return GeocodingHelper.eventWithinDistance(event, centerPoint, 50);
+      }).toList();
+    }
+
+    return filtered;
   }
 
   Widget _buildContent() {
@@ -134,7 +183,6 @@ class _HomePageState extends State<HomePage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // filtered events based on current filters
     final filteredEvents = _getFilteredEvents();
 
     switch (selectedTab) {
@@ -166,6 +214,7 @@ class _HomePageState extends State<HomePage> {
       },
       onTimeRangeChanged: _handleTimeRangeChanged,
       onQuickTimeSelected: _handleQuickTimeSelected,
+      onLocationFiltersChanged: _handleLocationFiltersChanged,
       onEventPosted: _refreshEvents,
       child: Container(
         margin: const EdgeInsets.all(16),
