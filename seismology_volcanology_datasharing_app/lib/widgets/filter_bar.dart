@@ -4,6 +4,7 @@ import 'package:seismology_volcanology_datasharing_app/screens/event_post_landin
 import '../screens/event_post_wizard.dart';
 import 'download_widget.dart';
 import '../widgets/report_generator_wizard.dart';
+import '../utils_services/responsive_sizes.dart';
 
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
@@ -94,101 +95,102 @@ class _FilterBarState extends State<FilterBar> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = ResponsiveSizes.getHorizontalPadding(context);
+    final isSmallScreen = ResponsiveSizes.isSmallDevice(context);
+
     return Column(
       children: [
         // TOP BAR
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: Colors.grey[300],
-          child: Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _showFilters = !_showFilters;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _showFilters
-                      ? const Color(0xFF868686)
-                      : null,
-                  foregroundColor: _showFilters ? Colors.white : null,
-                ),
-                icon: const Icon(Icons.filter_alt_outlined),
-                label: const Text('Filters'),
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search events, volcanoes, locations...',
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
+        SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(horizontalPadding),
+            child: Container(
+              color: Colors.grey[300],
+              child: Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showFilters = !_showFilters;
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _showFilters ? const Color(0xFF868686) : null,
+                      foregroundColor: _showFilters ? Colors.white : null,
                     ),
+                    icon: const Icon(Icons.filter_alt_outlined),
+                    label: const Text('Filters'),
                   ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
-              _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
-              _iconButton(
-                Icons.download_outlined, 
-                'Export', 
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => DownloadWidget(
-                      events: [], // not implemented
-                      onClose: () => Navigator.of(context).pop(),
-                    ),
-                  );
-                },
-              ),
-              _iconButton(
-                Icons.star, 
-                'Generate report',
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const ReportGeneratorWizard(),
-                  );
-                }),
-              _iconButton(
-                Icons.post_add,
-                'Post',
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      fullscreenDialog: true,
-                      builder: (_) => ChangeNotifierProvider(
-                        create: (_) => EventPostWizardController(),
-                        child: const EventPostLandingScreen(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search events, volcanoes, locations...',
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
-                  );
-                  widget.onEventPosted?.call();
-                },
+                  ),
+                  const SizedBox(width: 12),
+                  _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
+                  _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
+                  _iconButton(
+                    Icons.download_outlined,
+                    'Export',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => DownloadWidget(
+                          events: [], // not implemented
+                          onClose: () => Navigator.of(context).pop(),
+                        ),
+                      );
+                    },
+                  ),
+                  _iconButton(
+                    Icons.star,
+                    'Generate report',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => const ReportGeneratorWizard(),
+                      );
+                    },
+                  ),
+                  _iconButton(
+                    Icons.post_add,
+                    'Post',
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          fullscreenDialog: true,
+                          builder: (_) => ChangeNotifierProvider(
+                            create: (_) => EventPostWizardController(),
+                            child: const EventPostLandingScreen(),
+                          ),
+                        ),
+                      );
+                      widget.onEventPosted?.call();
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
 
         // FILTER DROPDOWN PANEL
         AnimatedCrossFade(
           duration: const Duration(milliseconds: 300),
-          crossFadeState: _showFilters
-              ? CrossFadeState.showFirst
-              : CrossFadeState.showSecond,
+          crossFadeState:
+              _showFilters ? CrossFadeState.showFirst : CrossFadeState.showSecond,
           firstChild: _filterPanel(),
           secondChild: const SizedBox.shrink(),
         ),
@@ -930,12 +932,13 @@ class _FilterBarState extends State<FilterBar> {
     String label, {
     required VoidCallback onPressed,
   }) {
+    final padding = ResponsiveSizes.getHorizontalPadding(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
+      padding: EdgeInsets.symmetric(horizontal: padding / 2),
       child: OutlinedButton.icon(
         onPressed: onPressed,
         icon: Icon(icon, size: 18),
-        label: Text(label),
+        label: Text(label, style: const TextStyle(fontSize: 12)),
       ),
     );
   }
