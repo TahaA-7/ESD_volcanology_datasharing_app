@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/event_post_model.dart';
 import '../utils_services/responsive_sizes.dart';
+import '../screens/eventlist_detail.dart';
 
 enum EventListView { grid, list }
 
@@ -265,7 +266,11 @@ class _EventListWidgetState extends State<EventListWidget> {
             children: [
               TextButton(
                 onPressed: () {
-                  _showEventDetails(event);
+                  Navigator.of(context).push(
+                     MaterialPageRoute(
+                      builder: (context) => EventDetailScreen(event: event),
+                    ),
+                  );
                 },
                 child: const Text(
                   'More details (click)',

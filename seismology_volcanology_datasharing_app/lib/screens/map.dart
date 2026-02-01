@@ -6,6 +6,7 @@ import '../widgets/legend.dart';
 import '../widgets/map_event_marker.dart';
 import '../widgets/map_cluster_marker.dart';
 import '../widgets/event_details_dialog.dart';
+import '../widgets/selection_results.dart';
 import '../models/event_post_model.dart';
 import '../utils_services/event_storage.dart';
 import '../utils_services/event_cluster.dart'; 
@@ -61,7 +62,7 @@ class SelectionBounds {
   }
 }
 
-/// Main map screen with selection
+/// Main map screen en selectie
 class MapScreen extends StatefulWidget {
   final List<Event>? events;
   const MapScreen({super.key, this.events});
@@ -84,6 +85,8 @@ class _MapScreenState extends State<MapScreen> {
   Offset? _selectionStart;
   Offset? _selectionEnd;
   SelectionBounds? _selectedBounds;
+  List<Event> _selectedEvents = [];
+  bool _showSelectionResults = false;
 
   @override
   void initState() {
@@ -123,6 +126,7 @@ class _MapScreenState extends State<MapScreen> {
         _selectionStart = position;
         _selectionEnd = position;
         _selectedBounds = null;
+        _showSelectionResults = false;
       });
     }
   }
@@ -181,11 +185,25 @@ class _MapScreenState extends State<MapScreen> {
       _selectedBounds = null;
       _selectionStart = null;
       _selectionEnd = null;
+      _selectedEvents = [];
+      _showSelectionResults = false;
     });
   }
 
   void _onSelectionComplete(SelectionBounds bounds) {
-    print('Selection complete: ${bounds.northEast}, ${bounds.southWest}');
+    // Find all events within the selected bounds
+    final eventsInBounds = _events.where((event) {
+      if (event.latitude == null || event.longitude == null) return false;
+      final point = LatLng(event.latitude!, event.longitude!);
+      return bounds.contains(point);
+    }).toList();
+
+    setState(() {
+      _selectedEvents = eventsInBounds;
+      _showSelectionResults = true;
+    });
+
+    print('Selection complete: ${eventsInBounds.length} events found');
   }
 
   Rect? _getSelectionRect() {
@@ -215,7 +233,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   double _calculateHaloSize(Event event) {
-    // Calculate halo size based on event duration
+    // halo size 
     final duration = event.duration;
     
     if (duration.inDays > 7) return 100.0;
@@ -358,6 +376,26 @@ class _MapScreenState extends State<MapScreen> {
         ),
 
         const MapLegend(),
+
+        // Selection Results Panel
+        if (_showSelectionResults && _selectedBounds != null)
+          Positioned(
+            right: 100,
+            top: 100,
+            child: SelectionResultsPanel(
+              events: _selectedEvents,
+              onClose: () {
+                setState(() {
+                  _showSelectionResults = false;
+                });
+              },
+              onMinimize: () {
+                setState(() {
+                  _showSelectionResults = false;
+                });
+              },
+            ),
+          ),
 
         Positioned(
           top: 16,

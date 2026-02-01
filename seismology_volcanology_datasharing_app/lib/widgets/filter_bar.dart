@@ -6,6 +6,7 @@ import '../utils_services/responsive_sizes.dart';
 import 'download_widget.dart';
 import '../widgets/report_generator_wizard.dart';
 import '../utils_services/responsive_sizes.dart';
+import '../models/event_post_model.dart';
 
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
@@ -17,6 +18,7 @@ class FilterBar extends StatefulWidget {
     double? latitude,
     double? longitude,
   })? onLocationFiltersChanged;
+  final Function(Set<EventType>)? onEventTypeFiltersChanged;
   final Future<void> Function()? onEventPosted;
   
   const FilterBar({
@@ -24,6 +26,7 @@ class FilterBar extends StatefulWidget {
     this.onTimeRangeChanged,
     this.onQuickTimeSelected,
     this.onLocationFiltersChanged,
+    this.onEventTypeFiltersChanged,
     this.onEventPosted,
   });
 
@@ -39,22 +42,8 @@ class _FilterBarState extends State<FilterBar> {
   DateTime? _toDate;
   double _timeAdjusterValue = 0.5;
   
-  // Event type filters
-  final Map<String, bool> _eventTypes = {
-    'seismic / tectonic': true,
-    'volcanic (eruptive / surface-process)': true,
-    'volcanic (non-eruptive)': true,
-    'mass movement / surface instability': true,
-    'cryoseismic / glacial': false,
-    'hydro-meteorological / fluid-related': false,
-    'atmospheric / coupled signals': false,
-    'anthropogenic': false,
-    'geodetic / deformation': false,
-    'multi-sensor': false,
-    'unspecified / anomalous': false,
-    'false / test': false,
-    'all on/off': false,
-  };
+  // Event type filters - Map EventType enum to bool
+  late Map<EventType, bool> _eventTypeFilters;
   
   // Geospatial categories
   final Map<String, bool> _geospatialCategories = {
@@ -70,6 +59,15 @@ class _FilterBarState extends State<FilterBar> {
   final TextEditingController _longitudeController = TextEditingController();
   final TextEditingController _distanceController = TextEditingController();
   final TextEditingController _gpsDistanceController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize all event types as enabled by default
+    _eventTypeFilters = {
+      for (var type in EventType.values) type: true,
+    };
+  }
 
   @override
   void dispose() {
@@ -92,6 +90,52 @@ class _FilterBarState extends State<FilterBar> {
       latitude: _latitudeController.text.isEmpty ? null : double.tryParse(_latitudeController.text),
       longitude: _longitudeController.text.isEmpty ? null : double.tryParse(_longitudeController.text),
     );
+  }
+
+  void _notifyEventTypeFiltersChanged() {
+    // Get all enabled event types
+    final enabledTypes = _eventTypeFilters.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toSet();
+    
+    widget.onEventTypeFiltersChanged?.call(enabledTypes);
+  }
+
+  String _getEventTypeLabel(EventType type) {
+    switch (type) {
+      case EventType.seismic_tectonic:
+        return 'seismic / tectonic';
+      case EventType.volcanicEruptive_surfaceProcess:
+        return 'volcanic (eruptive / surface-process)';
+      case EventType.volcanicNonEruptive:
+        return 'volcanic (non-eruptive)';
+      case EventType.massMovement_surfaceInstability:
+        return 'mass movement / surface instability';
+      case EventType.cryoseismic_glacial:
+        return 'cryoseismic / glacial';
+      case EventType.hydrothermal_fluidDriven:
+        return 'hydrothermal / fluid-driven';
+      case EventType.atmospheric_coupledSignals:
+        return 'atmospheric / coupled signals';
+      case EventType.anthropogenic:
+        return 'anthropogenic';
+      case EventType.geodetic_deformation:
+        return 'geodetic / deformation';
+      case EventType.multiSensor:
+        return 'multi-sensor';
+      case EventType.unspecified_anomalous:
+        return 'unspecified / anomalous';
+      case EventType.false_test:
+        return 'false / test';
+    }
+  }
+
+  void _toggleAllEventTypes(bool value) {
+    setState(() {
+      _eventTypeFilters.updateAll((key, _) => value);
+    });
+    _notifyEventTypeFiltersChanged();
   }
 
   @override
@@ -259,7 +303,7 @@ class _FilterBarState extends State<FilterBar> {
                     });
                   },
                   icon: Icon(
-                    _expandedFilters ? Icons.pause : Icons.pause,
+                    _expandedFilters ? Icons.expand_less : Icons.expand_more,
                     size: 32,
                   ),
                   style: IconButton.styleFrom(
@@ -717,10 +761,34 @@ class _FilterBarState extends State<FilterBar> {
         ),
         const SizedBox(height: 12),
         
+        // All on/off toggle
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: Checkbox(
+                value: _eventTypeFilters.values.every((v) => v),
+                tristate: true,
+                onChanged: (value) {
+                  _toggleAllEventTypes(value ?? true);
+                },
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Text('all on/off', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        
+        const SizedBox(height: 8),
+        
+        // Individual event types
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _eventTypes.entries.map((entry) {
+          children: EventType.values.map((type) {
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -728,17 +796,18 @@ class _FilterBarState extends State<FilterBar> {
                   width: 18,
                   height: 18,
                   child: Checkbox(
-                    value: entry.value,
+                    value: _eventTypeFilters[type] ?? true,
                     onChanged: (value) {
                       setState(() {
-                        _eventTypes[entry.key] = value ?? false;
+                        _eventTypeFilters[type] = value ?? false;
                       });
+                      _notifyEventTypeFiltersChanged();
                     },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
                 const SizedBox(width: 4),
-                Text(entry.key, style: const TextStyle(fontSize: 10)),
+                Text(_getEventTypeLabel(type), style: const TextStyle(fontSize: 10)),
                 const SizedBox(width: 2),
                 const Icon(Icons.info_outline, size: 12),
               ],
@@ -958,10 +1027,8 @@ class _FilterBarState extends State<FilterBar> {
       _distanceController.clear();
       _gpsDistanceController.clear();
       
-      _eventTypes.updateAll((key, value) => key == 'seismic / tectonic' || 
-                                             key == 'volcanic (eruptive / surface-process)' ||
-                                             key == 'volcanic (non-eruptive)' ||
-                                             key == 'mass movement / surface instability');
+      // Reset all event types to enabled
+      _eventTypeFilters.updateAll((key, value) => true);
       _geospatialCategories.updateAll((key, value) => true);
     });
     
@@ -974,6 +1041,6 @@ class _FilterBarState extends State<FilterBar> {
       latitude: null,
       longitude: null,
     );
-    // _notifyLocationFiltersChanged();
+    _notifyEventTypeFiltersChanged();
   }
 }

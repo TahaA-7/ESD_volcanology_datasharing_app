@@ -32,12 +32,17 @@ class _HomePageState extends State<HomePage> {
   double? _latitudeFilter;
   double? _longitudeFilter;
 
+  // Event type filter state
+  Set<EventType> _selectedEventTypes = {};
+
   List<Event> _postedEvents = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    // Initialize with all event types enabled
+    _selectedEventTypes = Set.from(EventType.values);
     _loadEvents();
   }
 
@@ -91,13 +96,28 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _handleEventTypeFiltersChanged(Set<EventType> eventTypes) {
+    setState(() {
+      _selectedEventTypes = eventTypes;
+    });
+    print('Event type filters changed: ${eventTypes.length} types selected');
+  }
+
   // Apply all filters to events
   List<Event> _getFilteredEvents() {
     if (_postedEvents.isEmpty) return [];
 
     List<Event> filtered = List.from(_postedEvents);
 
-    //tijd filters
+    // Apply event type filter
+    if (_selectedEventTypes.isNotEmpty && _selectedEventTypes.length < EventType.values.length) {
+      filtered = filtered.where((event) {
+        return _selectedEventTypes.contains(event.eventType);
+      }).toList();
+      print('After event type filter: ${filtered.length} events (from ${_postedEvents.length})');
+    }
+
+    // Time filters
     DateTime? fromDate = _filterFromDate;
     DateTime? toDate = _filterToDate;
 
@@ -168,7 +188,7 @@ class _HomePageState extends State<HomePage> {
       }).toList();
     }
 
-    // coordinates filters
+    // Coordinates filters
     if (_latitudeFilter != null && _longitudeFilter != null) {
       final centerPoint = LatLng(_latitudeFilter!, _longitudeFilter!);
       filtered = filtered.where((event) {
@@ -219,6 +239,7 @@ class _HomePageState extends State<HomePage> {
       onTimeRangeChanged: _handleTimeRangeChanged,
       onQuickTimeSelected: _handleQuickTimeSelected,
       onLocationFiltersChanged: _handleLocationFiltersChanged,
+      onEventTypeFiltersChanged: _handleEventTypeFiltersChanged,
       onEventPosted: _refreshEvents,
       child: SafeArea(
         child: Padding(

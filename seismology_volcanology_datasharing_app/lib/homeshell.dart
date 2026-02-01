@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'widgets/top_tabs.dart';
 import 'widgets/filter_bar.dart';
 import 'utils_services/responsive_sizes.dart';
+import 'models/event_post_model.dart';
 
 class HomeShell extends StatelessWidget {
   final HomeTab selectedTab;
@@ -15,6 +16,7 @@ class HomeShell extends StatelessWidget {
     double? latitude,
     double? longitude,
   })? onLocationFiltersChanged;
+  final Function(Set<EventType>)? onEventTypeFiltersChanged;
   final Future<void> Function()? onEventPosted;
   final Widget child;
 
@@ -26,6 +28,7 @@ class HomeShell extends StatelessWidget {
     this.onTimeRangeChanged,
     this.onQuickTimeSelected,
     this.onLocationFiltersChanged,
+    this.onEventTypeFiltersChanged,
     this.onEventPosted,
   });
 
@@ -44,7 +47,8 @@ class HomeShell extends StatelessWidget {
               onTimeRangeChanged: onTimeRangeChanged,
               onQuickTimeSelected: onQuickTimeSelected,
               onLocationFiltersChanged: onLocationFiltersChanged,
-              onEventPosted: onEventPosted,
+              onEventTypeFiltersChanged: onEventTypeFiltersChanged,
+              onEventPosted: onEventPosted, 
             ),
             Expanded(child: child),
           ],
