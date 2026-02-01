@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/event_post_model.dart';
+import '../utils_services/responsive_sizes.dart';
 
 enum EventListView { grid, list }
 
@@ -167,13 +168,18 @@ class _EventListWidgetState extends State<EventListWidget> {
   }
 
   Widget _buildGridView() {
+    final padding = ResponsiveSizes.getHorizontalPadding(context);
+    final spacing = ResponsiveSizes.getContentSpacing(context);
+    final crossAxisCount = ResponsiveSizes.isSmallDevice(context) ? 1 : 
+                          ResponsiveSizes.isMobile(context) ? 2 : 4;
+    
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: spacing,
+          mainAxisSpacing: spacing,
           childAspectRatio: 1.3,
         ),
         itemCount: _events.length,
@@ -185,8 +191,10 @@ class _EventListWidgetState extends State<EventListWidget> {
   }
 
   Widget _buildEventCard(Event event) {
+    final padding = ResponsiveSizes.getHorizontalPadding(context);
+    
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -278,9 +286,11 @@ class _EventListWidgetState extends State<EventListWidget> {
   }
 
   Widget _buildListView() {
+    final padding = ResponsiveSizes.getHorizontalPadding(context);
+    
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(padding),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
 import '../models/event_post_model.dart';
+import '../utils_services/responsive_sizes.dart';
 import 'event_details_dialog.dart';
 
 class TimelineWidget extends StatefulWidget {
@@ -216,58 +217,69 @@ class _TimelineWidgetState extends State<TimelineWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = ResponsiveSizes.getHorizontalPadding(context);
+    final verticalPadding = ResponsiveSizes.getVerticalPadding(context);
+    final contentSpacing = ResponsiveSizes.getContentSpacing(context);
+
     final canGoPrevious = _startTime.isAfter(_minDate);
     final canGoNext = _endTime.isBefore(_maxDate);
 
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          color: Colors.grey[200],
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: canGoPrevious ? _goToPreviousDay : null,
-                icon: const Icon(Icons.chevron_left),
-                tooltip: 'Previous Day',
-              ),
-              IconButton(
-                onPressed: canGoNext ? _goToNextDay : null,
-                icon: const Icon(Icons.chevron_right),
-                tooltip: 'Next Day',
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                onPressed: _goToToday,
-                icon: const Icon(Icons.today, size: 18),
-                label: const Text('Today'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
-              const SizedBox(width: 16),
-              IconButton(
-                onPressed: _zoomOut,
-                icon: const Icon(Icons.zoom_out),
-                tooltip: 'Zoom Out',
-              ),
-              IconButton(
-                onPressed: _zoomIn,
-                icon: const Icon(Icons.zoom_in),
-                tooltip: 'Zoom In',
-              ),
-              const Spacer(),
-              Flexible(
-                child: Text(
-                  'Range: ${DateFormat('yyyy-MM-dd').format(_minDate)} to ${DateFormat('yyyy-MM-dd').format(_maxDate)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
+        SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
+            child: Container(
+              color: Colors.grey[200],
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: canGoPrevious ? _goToPreviousDay : null,
+                    icon: const Icon(Icons.chevron_left),
+                    tooltip: 'Previous Day',
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  IconButton(
+                    onPressed: canGoNext ? _goToNextDay : null,
+                    icon: const Icon(Icons.chevron_right),
+                    tooltip: 'Next Day',
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: _goToToday,
+                    icon: const Icon(Icons.today, size: 18),
+                    label: const Text('Today'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  IconButton(
+                    onPressed: _zoomOut,
+                    icon: const Icon(Icons.zoom_out),
+                    tooltip: 'Zoom Out',
+                  ),
+                  IconButton(
+                    onPressed: _zoomIn,
+                    icon: const Icon(Icons.zoom_in),
+                    tooltip: 'Zoom In',
+                  ),
+                  const Spacer(),
+                  Flexible(
+                    child: Text(
+                      'Range: ${DateFormat('yyyy-MM-dd').format(_minDate)} to ${DateFormat('yyyy-MM-dd').format(_maxDate)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         Expanded(
@@ -520,32 +532,48 @@ class TimelinePainter extends CustomPainter {
   void _drawSingleDayTimeline(Canvas canvas, Size size, Paint paint, TextPainter textPainter) {
     final duration = endTime.difference(startTime);
     final hours = duration.inHours + 1;
+
+    // otherwise it becomes too cramped on mobile
+    const double minLabelWidth = 50.0;
+    final int maxLabels = (size.width / minLabelWidth).floor();
+
+    final int interval = (hours / maxLabels).ceil().clamp(1, 24);
+
     final hourWidth = size.width / hours;
+    //
 
     for (int i = 0; i <= hours; i++) {
       final x = i * hourWidth;
       final currentTime = startTime.add(Duration(hours: i));
 
+      final isLabeled = i % interval == 0 || i == hours;
+      paint.strokeWidth = isLabeled ? 1.5 : 0.5;
+
       canvas.drawLine(
         Offset(x, 0),
-        Offset(x, size.height - 60),
+        Offset(x, isLabeled ? size.height - 60 : size.height - 70),
         paint,
       );
 
-      final hourText = DateFormat('HH:mm').format(currentTime);
-      textPainter.text = TextSpan(
-        text: hourText,
-        style: const TextStyle(
-          color: Colors.black87,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(x - textPainter.width / 2, size.height - 55),
-      );
+      if (isLabeled) {
+        final hourText = DateFormat('HH:mm').format(currentTime);
+        textPainter.text = TextSpan(
+          text: hourText,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 11,
+            // fontWeight: FontWeight.w500,
+          ),
+        );
+        textPainter.layout();
+
+        double labelX = x - textPainter.width / 2;
+        if (i == 0) labelX = 0;
+        if (i == hours) labelX = size.width - textPainter.width;
+
+        textPainter.paint(canvas, Offset(labelX, size.height - 55),
+        );
+      }
 
       if (i == 0) {
         textPainter.text = const TextSpan(

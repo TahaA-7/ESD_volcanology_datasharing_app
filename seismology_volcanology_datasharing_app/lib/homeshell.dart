@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'widgets/top_tabs.dart';
 import 'widgets/filter_bar.dart';
+import 'utils_services/responsive_sizes.dart';
 
 class HomeShell extends StatelessWidget {
   final HomeTab selectedTab;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:seismology_volcanology_datasharing_app/screens/event_post_landing_screen.dart';
 import '../screens/event_post_wizard.dart';
+import '../utils_services/responsive_sizes.dart';
 import 'download_widget.dart';
 
 class FilterBar extends StatefulWidget {
@@ -93,83 +94,134 @@ class _FilterBarState extends State<FilterBar> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = ResponsiveSizes.getHorizontalPadding(context);
+    final isSmallScreen = ResponsiveSizes.isSmallDevice(context);
     return Column(
       children: [
         // TOP BAR
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          color: Colors.grey[300],
-          child: Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _showFilters = !_showFilters;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _showFilters
-                      ? const Color(0xFF868686)
-                      : null,
-                  foregroundColor: _showFilters ? Colors.white : null,
-                ),
-                icon: const Icon(Icons.filter_alt_outlined),
-                label: const Text('Filters'),
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search events, volcanoes, locations...',
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
+        SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(horizontalPadding),
+            child: Container(
+              color: Colors.grey[300],
+              child: Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showFilters = !_showFilters;
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _showFilters
+                          ? const Color(0xFF868686)
+                          : null,
+                      foregroundColor: _showFilters ? Colors.white : null,
                     ),
+                    icon: const Icon(Icons.filter_alt_outlined),
+                    label: const Text('Filters'),
                   ),
-                ),
-              ),
 
-              const SizedBox(width: 12),
+                  const SizedBox(width: 12),
 
-              _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
-              _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
-              _iconButton(
-                Icons.download_outlined, 
-                'Export', 
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => DownloadWidget(
-                      events: [], // not implemented
-                      onClose: () => Navigator.of(context).pop(),
-                    ),
-                  );
-                },
-              ),
-              _iconButton(
-                Icons.post_add,
-                'Post',
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      fullscreenDialog: true,
-                      builder: (_) => ChangeNotifierProvider(
-                        create: (_) => EventPostWizardController(),
-                        child: const EventPostLandingScreen(),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search events, volcanoes, locations...',
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
-                  );
-                  widget.onEventPosted?.call();
-                },
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: isSmallScreen
+                        ? SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
+                                _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
+                                _iconButton(
+                                  Icons.download_outlined, 
+                                  'Export', 
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => DownloadWidget(
+                                        events: [], // not implemented
+                                        onClose: () => Navigator.of(context).pop(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _iconButton(
+                                  Icons.post_add,
+                                  'Post',
+                                  onPressed: () async {
+                                    await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        fullscreenDialog: true,
+                                        builder: (_) => ChangeNotifierProvider(
+                                          create: (_) => EventPostWizardController(),
+                                          child: const EventPostLandingScreen(),
+                                        ),
+                                      ),
+                                    );
+                                    widget.onEventPosted?.call();
+                                  },
+                                ),
+                              ],
+                            ),
+                          )
+                        : Row(
+                            children: [
+                              _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
+                              _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
+                              _iconButton(
+                                Icons.download_outlined, 
+                                'Export', 
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => DownloadWidget(
+                                      events: [], // not implemented
+                                      onClose: () => Navigator.of(context).pop(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _iconButton(
+                                Icons.post_add,
+                                'Post',
+                                onPressed: () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      fullscreenDialog: true,
+                                      builder: (_) => ChangeNotifierProvider(
+                                        create: (_) => EventPostWizardController(),
+                                        child: const EventPostLandingScreen(),
+                                      ),
+                                    ),
+                                  );
+                                  widget.onEventPosted?.call();
+                                },
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
 
@@ -920,12 +972,13 @@ class _FilterBarState extends State<FilterBar> {
     String label, {
     required VoidCallback onPressed,
   }) {
+    final padding = ResponsiveSizes.getHorizontalPadding(context);
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
+      padding: EdgeInsets.symmetric(horizontal: padding / 2),
       child: OutlinedButton.icon(
         onPressed: onPressed,
         icon: Icon(icon, size: 18),
-        label: Text(label),
+        label: Text(label, style: const TextStyle(fontSize: 12)),
       ),
     );
   }

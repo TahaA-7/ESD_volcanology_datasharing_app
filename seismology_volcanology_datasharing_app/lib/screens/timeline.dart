@@ -8,6 +8,7 @@ import '../widgets/eventlist_widget.dart';
 import '../models/event_post_model.dart';
 import '../utils_services/event_storage.dart';
 import '../utils_services/geocoding_helper.dart';
+import '../utils_services/responsive_sizes.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -205,6 +206,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = ResponsiveSizes.getHorizontalPadding(context);
+    final verticalPadding = ResponsiveSizes.getVerticalPadding(context);
+
     return HomeShell(
       selectedTab: selectedTab,
       onTabSelected: (tab) {
@@ -216,16 +220,23 @@ class _HomePageState extends State<HomePage> {
       onQuickTimeSelected: _handleQuickTimeSelected,
       onLocationFiltersChanged: _handleLocationFiltersChanged,
       onEventPosted: _refreshEvents,
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(
-            color: Color(0xFFE5CFC7),
-            width: 4,
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: verticalPadding,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: const Color(0xFFE5CFC7),
+                width: 4,
+              ),
+            ),
+          child: _buildContent(),
           ),
         ),
-        child: _buildContent(),
       ),
     );
   }
