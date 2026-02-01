@@ -172,7 +172,6 @@ class _EventListWidgetState extends State<EventListWidget> {
     final spacing = ResponsiveSizes.getContentSpacing(context);
     final crossAxisCount = ResponsiveSizes.isSmallDevice(context) ? 1 : 
                           ResponsiveSizes.isMobile(context) ? 2 : 4;
-    
     return Padding(
       padding: EdgeInsets.all(padding),
       child: GridView.builder(
@@ -192,7 +191,6 @@ class _EventListWidgetState extends State<EventListWidget> {
 
   Widget _buildEventCard(Event event) {
     final padding = ResponsiveSizes.getHorizontalPadding(context);
-    
     return Container(
       padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(

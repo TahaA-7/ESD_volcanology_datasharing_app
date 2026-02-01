@@ -5,8 +5,8 @@ import 'package:file_saver/file_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
-// import 'package:pdf/pdf.dart';
-// import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../models/event_post_model.dart';
 
 /// Service for downloading/exporting events in various formats
@@ -25,6 +25,8 @@ class ExportConfig {
   final bool includeSource;
   final bool includeStatus;
   final String? customFilename;
+  final Uint8List? chartImage;  // Add this
+  final Uint8List? mapImage; 
 
   const ExportConfig({
     this.includeCoordinates = true,
@@ -33,6 +35,8 @@ class ExportConfig {
     this.includeSource = true,
     this.includeStatus = false,
     this.customFilename,
+    this.chartImage,
+    this.mapImage,
   });
 }
 
@@ -142,9 +146,11 @@ class DownloadService {
       case ExportFormat.csv:
       case ExportFormat.json:
       case ExportFormat.text:
-      case ExportFormat.pdf: // Currently text-based PDF
         final content = _generateTextContent(events, format, config);
         return Uint8List.fromList(utf8.encode(content));
+      
+      case ExportFormat.pdf:
+        return await _generatePdfBytes(events, config);
       
       case ExportFormat.excel:
         return await _generateExcelBytes(events, config);
@@ -512,4 +518,273 @@ class DownloadService {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
   }
+
+  /// Generate a professional PDF document with all selected event data
+  Future<Uint8List> _generatePdfBytes(
+    List<Event> events,
+    ExportConfig config,
+  ) async {
+    final pdf = pw.Document();
+    final dateFormat = DateFormat('dd-MM-yyyy HH:mm');
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(20),
+        build: (context) {
+          final widgets = <pw.Widget>[
+            // Header
+            pw.Text(
+              'Seismic & Volcanic Events Export Report',
+              style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Text(
+              'Generated: ${DateFormat('dd-MM-yyyy HH:mm:ss').format(DateTime.now())} | Total Events: ${events.length}',
+              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+            ),
+            pw.Divider(height: 20),
+            pw.SizedBox(height: 12),
+          ];
+
+          // Add each event
+          for (var i = 0; i < events.length; i++) {
+            final event = events[i];
+            
+            widgets.add(
+              pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 16),
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300, width: 1),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Event header
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          'Event ${i + 1}',
+                          style: pw.TextStyle(
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        pw.Text(
+                          event.id.substring(0, 8),
+                          style: const pw.TextStyle(
+                            fontSize: 9,
+                            color: PdfColors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 8),
+
+                    // Event type and subtype
+                    pw.Row(
+                      children: [
+                        pw.Expanded(
+                          flex: 1,
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text('Type', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                              pw.Text(
+                                event.eventType.name.replaceAll('_', ' ').toUpperCase(),
+                                style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 1,
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text('Subtype', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                              pw.Text(
+                                event.eventSubtype.name.replaceAll('_', ' '),
+                                style: const pw.TextStyle(fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 8),
+
+                    // Location
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Location', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                        pw.Text(
+                          event.townCity.isNotEmpty 
+                              ? '${event.townCity}, ${event.stateProvince}, ${event.country.name}'
+                              : event.country.name,
+                          style: const pw.TextStyle(fontSize: 10),
+                        ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 8),
+
+                    // Coordinates (if enabled)
+                    if (config.includeCoordinates && event.latitude != null && event.longitude != null)
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Coordinates', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                          pw.Text(
+                            'Lat: ${event.latitude?.toStringAsFixed(4)}, Lon: ${event.longitude?.toStringAsFixed(4)}',
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                          pw.SizedBox(height: 8),
+                        ],
+                      ),
+
+                    // Time information (if enabled)
+                    if (config.includeDuration && event.startTime != null)
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Time Information', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                          pw.Text(
+                            'Start: ${dateFormat.format(event.startTime!)}',
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                          pw.Text(
+                            'End: ${dateFormat.format(event.startTime!.add(event.duration))}',
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                          pw.Text(
+                            'Duration: ${event.duration.inHours}h ${event.duration.inMinutes % 60}m',
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                          pw.SizedBox(height: 8),
+                        ],
+                      ),
+
+                    // Source (if enabled)
+                    if (config.includeSource && event.source.isNotEmpty)
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Source', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                          pw.Text(
+                            event.source,
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                          pw.SizedBox(height: 8),
+                        ],
+                      ),
+
+                    // Description (if enabled)
+                    if (config.includeDescription && event.description.isNotEmpty)
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Description', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                          pw.Text(
+                            event.description,
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
+                          pw.SizedBox(height: 8),
+                        ],
+                      ),
+
+                    // Status (if enabled)
+                    if (config.includeStatus)
+                      pw.Row(
+                        children: [
+                          pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text('Status', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                              pw.Text(
+                                event.status.name.replaceAll('_', ' '),
+                                style: const pw.TextStyle(fontSize: 10),
+                              ),
+                            ],
+                          ),
+                          pw.SizedBox(width: 20),
+                          pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text('Draft', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+                              pw.Text(
+                                event.draft ? 'Yes' : 'No',
+                                style: const pw.TextStyle(fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            );
+
+            // Page break every 5 events to avoid overflow
+            if ((i + 1) % 5 == 0 && i < events.length - 1) {
+              widgets.add(pw.NewPage());
+            }
+          }
+
+          // Footer
+          widgets.add(pw.SizedBox(height: 16));
+          widgets.add(pw.Divider());
+          widgets.add(pw.SizedBox(height: 8));
+          widgets.add(
+            pw.Text(
+              'End of Report',
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey),
+              textAlign: pw.TextAlign.center,
+            ),
+          );
+
+          return widgets;
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+}
+
+Future<Uint8List> _generatePdfBytes(
+  List<Event> events,
+  ExportConfig config,
+) async {
+  final pdf = pw.Document();
+
+  pdf.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      build: (context) => [
+        pw.Text(
+          'Event Export Report',
+          style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 16),
+        ...events.map((event) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('ID: ${event.id}'),
+              pw.Text('Type: ${event.eventType.name}'),
+              if (event.description.isNotEmpty)
+                pw.Text('Description: ${event.description}'),
+              pw.Divider(),
+            ],
+          );
+        }),
+      ],
+    ),
+  );
+
+  return pdf.save(); // <-- REAL PDF bytes
 }

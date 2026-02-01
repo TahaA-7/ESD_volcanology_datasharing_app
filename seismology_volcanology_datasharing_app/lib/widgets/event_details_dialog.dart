@@ -4,6 +4,7 @@ import 'package:seismology_volcanology_datasharing_app/utils_services/download_s
 import '../models/event_post_model.dart';
 import '../utils_services/responsive_sizes.dart';
 import 'download_widget.dart';
+import '../utils_services/responsive_sizes.dart';
 
 class EventDetailsDialog extends StatelessWidget {
   final Event event;
@@ -114,7 +115,7 @@ class EventDetailsDialog extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              TextButton.icon(
+                                TextButton.icon(
                                 onPressed: () {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Share functionality coming soon')),
@@ -169,79 +170,22 @@ class EventDetailsDialog extends StatelessWidget {
                               ),
                             ],
                           ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            TextButton.icon(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Share functionality coming soon')),
-                                );
-                              },
-                              icon: const Icon(Icons.share, size: 18),
-                              label: const Text('Share'),
-                            ),
-                            const SizedBox(width: 16),
-                            TextButton.icon(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Bookmark functionality coming soon')),
-                                );
-                              },
-                              icon: const Icon(Icons.bookmark_border, size: 18),
-                              label: const Text('Bookmark'),
-                            ),
-                            const SizedBox(width: 16),
-                            PopupMenuButton<ExportFormat>(
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.download, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Download'),
-                                ],
-                              ),
-                              onSelected: (ExportFormat format) async {
-                                final downloadService = DownloadService();
-                                try {
-                                  final filename = await downloadService.downloadEvents([event], format: format);
-                                  if (context.mounted && filename != null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Downloaded ${format.name.toUpperCase()}: $filename')),
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Download failed: $e')),
-                                    );
-                                  }
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(value: ExportFormat.json, child: Text('JSON (.json)')),
-                                const PopupMenuItem(value: ExportFormat.csv, child: Text('CSV (.csv)')),
-                                const PopupMenuItem(value: ExportFormat.excel, child: Text('Excel (.xlsx)')),
-                                const PopupMenuItem(value: ExportFormat.pdf, child: Text('PDF (.pdf)')),
-                                const PopupMenuItem(value: ExportFormat.text, child: Text('Text (.txt)')),
-                              ],
-                            ),
-                          ],
-                        ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('More details functionality coming soon')),
-                        );
-                      },
-                      child: const Text(
-                          'More details (click)',
-                          style: TextStyle(
-                            decoration: TextDecoration.underline,
+                      ):
+                    
+                      const SizedBox(height: 12),
+                      
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            // More details functionality
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('More details functionality coming soon')),
+                            );
+                          },
+                          child: const Text(
+                            'More details (click)',
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
                           ),
                         ),
                       ),

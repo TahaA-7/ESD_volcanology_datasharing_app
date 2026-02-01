@@ -4,6 +4,8 @@ import 'package:seismology_volcanology_datasharing_app/screens/event_post_landin
 import '../screens/event_post_wizard.dart';
 import '../utils_services/responsive_sizes.dart';
 import 'download_widget.dart';
+import '../widgets/report_generator_wizard.dart';
+import '../utils_services/responsive_sizes.dart';
 
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
@@ -113,17 +115,13 @@ class _FilterBarState extends State<FilterBar> {
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _showFilters
-                          ? const Color(0xFF868686)
-                          : null,
+                      backgroundColor: _showFilters ? const Color(0xFF868686) : null,
                       foregroundColor: _showFilters ? Colors.white : null,
                     ),
                     icon: const Icon(Icons.filter_alt_outlined),
                     label: const Text('Filters'),
                   ),
-
                   const SizedBox(width: 12),
-
                   Expanded(
                     child: TextField(
                       controller: _searchController,
@@ -140,84 +138,47 @@ class _FilterBarState extends State<FilterBar> {
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 12),
-
-                  Expanded(
-                    child: isSmallScreen
-                        ? SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
-                                _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
-                                _iconButton(
-                                  Icons.download_outlined, 
-                                  'Export', 
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => DownloadWidget(
-                                        events: [], // not implemented
-                                        onClose: () => Navigator.of(context).pop(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                _iconButton(
-                                  Icons.post_add,
-                                  'Post',
-                                  onPressed: () async {
-                                    await Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        fullscreenDialog: true,
-                                        builder: (_) => ChangeNotifierProvider(
-                                          create: (_) => EventPostWizardController(),
-                                          child: const EventPostLandingScreen(),
-                                        ),
-                                      ),
-                                    );
-                                    widget.onEventPosted?.call();
-                                  },
-                                ),
-                              ],
-                            ),
-                          )
-                        : Row(
-                            children: [
-                              _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
-                              _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
-                              _iconButton(
-                                Icons.download_outlined, 
-                                'Export', 
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => DownloadWidget(
-                                      events: [], // not implemented
-                                      onClose: () => Navigator.of(context).pop(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _iconButton(
-                                Icons.post_add,
-                                'Post',
-                                onPressed: () async {
-                                  await Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      fullscreenDialog: true,
-                                      builder: (_) => ChangeNotifierProvider(
-                                        create: (_) => EventPostWizardController(),
-                                        child: const EventPostLandingScreen(),
-                                      ),
-                                    ),
-                                  );
-                                  widget.onEventPosted?.call();
-                                },
-                              ),
-                            ],
+                  _iconButton(Icons.info_outline, 'Tutorial', onPressed: () {}),
+                  _iconButton(Icons.bookmark_border, 'Bookmarks', onPressed: () {}),
+                  _iconButton(
+                    Icons.download_outlined,
+                    'Export',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => DownloadWidget(
+                          events: [], // not implemented
+                          onClose: () => Navigator.of(context).pop(),
+                        ),
+                      );
+                    },
+                  ),
+                  _iconButton(
+                    Icons.star,
+                    'Generate report',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => const ReportGeneratorWizard(),
+                      );
+                    },
+                  ),
+                  _iconButton(
+                    Icons.post_add,
+                    'Post',
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          fullscreenDialog: true,
+                          builder: (_) => ChangeNotifierProvider(
+                            create: (_) => EventPostWizardController(),
+                            child: const EventPostLandingScreen(),
                           ),
+                        ),
+                      );
+                      widget.onEventPosted?.call();
+                    },
                   ),
                 ],
               ),
@@ -228,9 +189,8 @@ class _FilterBarState extends State<FilterBar> {
         // FILTER DROPDOWN PANEL
         AnimatedCrossFade(
           duration: const Duration(milliseconds: 300),
-          crossFadeState: _showFilters
-              ? CrossFadeState.showFirst
-              : CrossFadeState.showSecond,
+          crossFadeState:
+              _showFilters ? CrossFadeState.showFirst : CrossFadeState.showSecond,
           firstChild: _filterPanel(),
           secondChild: const SizedBox.shrink(),
         ),

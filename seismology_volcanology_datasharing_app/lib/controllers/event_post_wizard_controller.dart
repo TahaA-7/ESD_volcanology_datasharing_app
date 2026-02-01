@@ -175,7 +175,7 @@ class EventPostWizardController extends ChangeNotifier {
       case EventType.seismic_tectonic:
         final e = event as EventSeismic;
         e.magnitude = double.tryParse(seismic.magnitude ?? '');
-        e.magnitudeType = double.tryParse(seismic.magnitudeType ?? '');
+        e.magnitudeType = seismic.magnitudeType ?? '';
         e.depth = double.tryParse(seismic.depth ?? '');
         e.depthUncertainty = double.tryParse(seismic.depthUncertainty ?? '');
         e.focalMechanism = seismic.focalMechanism ?? '';

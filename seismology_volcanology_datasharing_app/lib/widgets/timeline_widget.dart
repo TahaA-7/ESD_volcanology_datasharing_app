@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import '../models/event_post_model.dart';
 import '../utils_services/responsive_sizes.dart';
 import 'event_details_dialog.dart';
+import '../utils_services/responsive_sizes.dart';
 
 class TimelineWidget extends StatefulWidget {
   final DateTime? filterFromDate;
@@ -572,22 +573,6 @@ class TimelinePainter extends CustomPainter {
         if (i == hours) labelX = size.width - textPainter.width;
 
         textPainter.paint(canvas, Offset(labelX, size.height - 55),
-        );
-      }
-
-      if (i == 0) {
-        textPainter.text = const TextSpan(
-          text: 'start',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        );
-        textPainter.layout();
-        textPainter.paint(
-          canvas,
-          Offset(10, size.height - 30),
         );
       }
 

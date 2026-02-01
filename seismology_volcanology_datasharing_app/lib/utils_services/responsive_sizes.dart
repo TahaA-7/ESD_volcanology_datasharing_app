@@ -25,7 +25,6 @@ class ResponsiveSizes {
   // Get responsive horizontal padding
   static double getHorizontalPadding(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    
     if (width < mobileMedium) return paddingMedium;
     if (width < mobileRegular) return paddingLarge;
     if (width < tablet) return paddingExtraLarge;
@@ -35,7 +34,6 @@ class ResponsiveSizes {
   // Get responsive vertical padding
   static double getVerticalPadding(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    
     if (width < mobileMedium) return paddingSmall;
     if (width < mobileRegular) return paddingMedium;
     if (width < tablet) return paddingLarge;
@@ -45,7 +43,6 @@ class ResponsiveSizes {
   // Get responsive spacing for content
   static double getContentSpacing(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    
     if (width < mobileMedium) return spacingSmall;
     if (width < mobileRegular) return spacingMedium;
     if (width < tablet) return spacingLarge;

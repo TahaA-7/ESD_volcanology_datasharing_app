@@ -8,7 +8,7 @@ import '../widgets/map_cluster_marker.dart';
 import '../widgets/event_details_dialog.dart';
 import '../models/event_post_model.dart';
 import '../utils_services/event_storage.dart';
-import '../utils_services/event_cluster.dart';
+import '../utils_services/event_cluster.dart'; 
 import '../utils_services/responsive_sizes.dart'; 
 
 /// Map layers enum
@@ -282,7 +282,6 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final horizontalPadding = ResponsiveSizes.getHorizontalPadding(context);
-
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -351,12 +350,12 @@ class _MapScreenState extends State<MapScreen> {
                   border: Border.all(
                     color: Colors.blue,
                     width: 2.0,
-                   ),
                   ),
                 ),
               ),
             ),
           ),
+        ),
 
         const MapLegend(),
 
