@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/event_post_model.dart';
+import '../utils_services/download_service.dart';
+import '../widgets/event_details_dialog.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final Event event;
@@ -166,7 +168,39 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           const SizedBox(width: 12),
           _buildActionButton(Icons.bookmark_border, 'Bookmark'),
           const SizedBox(width: 12),
-          _buildActionButton(Icons.download, 'Download'),
+          PopupMenuButton<ExportFormat>(
+            child: const Row(
+              children: [
+                Icon(Icons.download, size: 18),
+                SizedBox(width: 8),
+                Text('Download'),
+              ],
+            ),
+            onSelected: (ExportFormat format) async {
+              final downloadService = DownloadService();
+              try {
+                final filename = await downloadService.downloadEvents([widget.event], format: format);
+                if (context.mounted && filename != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Downloaded ${format.name.toUpperCase()}: $filename')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Download failed: $e')),
+                  );
+                }
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: ExportFormat.json, child: Text('JSON (.json)')),
+              const PopupMenuItem(value: ExportFormat.csv, child: Text('CSV (.csv)')),
+              const PopupMenuItem(value: ExportFormat.excel, child: Text('Excel (.xlsx)')),
+              const PopupMenuItem(value: ExportFormat.pdf, child: Text('PDF (.pdf)')),
+              const PopupMenuItem(value: ExportFormat.text, child: Text('Text (.txt)')),
+            ],
+          ),
         ],
       ),
     );
