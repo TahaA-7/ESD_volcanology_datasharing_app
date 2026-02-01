@@ -139,9 +139,9 @@ class EventStorage {
           break;
         case EventType.unspecified_anomalous:
         default:
-          event = EventMultisensor(
+          event = EventUnspecified(
             id: json['id'] as String?,
-            eventSubtype: EventSubtypeMultisensor.default_,
+            eventSubtype: EventSubtype.unspecified,
           );
       }
       

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:seismology_volcanology_datasharing_app/screens/event_post_landing_screen.dart';
 import '../screens/event_post_wizard.dart';
 import 'download_widget.dart';
+import '../widgets/report_generator_wizard.dart';
 
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
@@ -153,6 +154,15 @@ class _FilterBarState extends State<FilterBar> {
                   );
                 },
               ),
+              _iconButton(
+                Icons.star, 
+                'Generate report',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const ReportGeneratorWizard(),
+                  );
+                }),
               _iconButton(
                 Icons.post_add,
                 'Post',

@@ -18,7 +18,7 @@ class EventSeismic extends Event {
   final EventSubtypeSeismic eventSubtype;
 
   double? magnitude;
-  double? magnitudeType;
+  String? magnitudeType;
   double? depth;
   double? depthUncertainty;
   String focalMechanism = "";
