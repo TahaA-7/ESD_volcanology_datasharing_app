@@ -12,14 +12,13 @@ import '../utils_services/event_storage.dart';
 import '../utils_services/event_cluster.dart'; 
 import '../utils_services/responsive_sizes.dart'; 
 
-/// Map layers enum
+/// Map lagen
 enum MapLayer {
   standard,
   satellite,
   terrain,
 }
 
-/// Extension to provide URL templates and labels
 extension MapLayerExtension on MapLayer {
   String get label {
     switch (this) {
@@ -76,11 +75,9 @@ class _MapScreenState extends State<MapScreen> {
   double _currentZoom = 2.0;
   MapLayer _selectedLayer = MapLayer.standard;
 
-  // Events
   List<Event> _events = [];
   bool _isLoading = true;
 
-  // Selection state
   bool _selectionMode = false;
   Offset? _selectionStart;
   Offset? _selectionEnd;
@@ -191,7 +188,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onSelectionComplete(SelectionBounds bounds) {
-    // Find all events within the selected bounds
     final eventsInBounds = _events.where((event) {
       if (event.latitude == null || event.longitude == null) return false;
       final point = LatLng(event.latitude!, event.longitude!);
@@ -247,12 +243,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   List<Marker> _buildEventMarkers() {
-    // Cluster events based on zoom level
     final clusters = EventClusterManager.clusterEvents(_events, _currentZoom);
 
     return clusters.map((cluster) {
       if (cluster.isCluster) {
-        // Multiple events - show cluster marker
         return Marker(
           point: cluster.center,
           width: 80,
@@ -260,7 +254,6 @@ class _MapScreenState extends State<MapScreen> {
           child: MapClusterMarker(
             cluster: cluster,
             onTap: () {
-              // Zoom in to cluster location
               _mapController.move(
                 cluster.center,
                 _currentZoom + 2,
@@ -269,7 +262,6 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       } else {
-        // Single event - show regular marker with halo
         final event = cluster.events.first;
         final haloSize = _calculateHaloSize(event);
         
@@ -377,7 +369,6 @@ class _MapScreenState extends State<MapScreen> {
 
         const MapLegend(),
 
-        // Selection Results Panel
         if (_showSelectionResults && _selectedBounds != null)
           Positioned(
             right: 100,

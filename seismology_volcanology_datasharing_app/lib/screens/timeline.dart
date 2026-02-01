@@ -20,19 +20,18 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   HomeTab selectedTab = HomeTab.timeline;
 
-  // Time filter state
+  // Tijd filte rs
   DateTime? _filterFromDate;
   DateTime? _filterToDate;
   String? _quickTimeFilter;
 
-  // Location filter state
+  // locatie filters
   String? _countryFilter;
   String? _cityFilter;
   String? _provinceFilter;
   double? _latitudeFilter;
   double? _longitudeFilter;
 
-  // Event type filter state
   Set<EventType> _selectedEventTypes = {};
 
   List<Event> _postedEvents = [];
@@ -41,7 +40,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize with all event types enabled
     _selectedEventTypes = Set.from(EventType.values);
     _loadEvents();
   }
@@ -103,13 +101,11 @@ class _HomePageState extends State<HomePage> {
     print('Event type filters changed: ${eventTypes.length} types selected');
   }
 
-  // Apply all filters to events
   List<Event> _getFilteredEvents() {
     if (_postedEvents.isEmpty) return [];
 
     List<Event> filtered = List.from(_postedEvents);
 
-    // Apply event type filter
     if (_selectedEventTypes.isNotEmpty && _selectedEventTypes.length < EventType.values.length) {
       filtered = filtered.where((event) {
         return _selectedEventTypes.contains(event.eventType);
@@ -117,7 +113,6 @@ class _HomePageState extends State<HomePage> {
       print('After event type filter: ${filtered.length} events (from ${_postedEvents.length})');
     }
 
-    // Time filters
     DateTime? fromDate = _filterFromDate;
     DateTime? toDate = _filterToDate;
 
@@ -176,7 +171,6 @@ class _HomePageState extends State<HomePage> {
       }).toList();
     }
 
-    // Apply location filters
     if (_countryFilter != null || _cityFilter != null || _provinceFilter != null) {
       filtered = filtered.where((event) {
         return GeocodingHelper.eventMatchesLocation(
@@ -188,7 +182,6 @@ class _HomePageState extends State<HomePage> {
       }).toList();
     }
 
-    // Coordinates filters
     if (_latitudeFilter != null && _longitudeFilter != null) {
       final centerPoint = LatLng(_latitudeFilter!, _longitudeFilter!);
       filtered = filtered.where((event) {

@@ -4,7 +4,6 @@ import 'package:geocoding/geocoding.dart';
 import 'dart:math' as math;
 
 class GeocodingHelper {
-  // Basic country center coordinates (approximate)
   static final Map<Country, LatLng> _countryCoordinates = {
     Country.afghanistan: LatLng(33.9391, 67.7100),
     Country.albania: LatLng(41.1533, 20.1683),
@@ -90,7 +89,6 @@ class GeocodingHelper {
     Country.unitedStatesOfAmerica: LatLng(37.0902, -95.7129),
     Country.venezuela: LatLng(6.4238, -66.5897),
     Country.vietnam: LatLng(14.0583, 108.2772),
-    // Add more as needed
   };
 
   static LatLng? getCoordinatesForEvent(Event event) {
@@ -99,7 +97,6 @@ class GeocodingHelper {
       return LatLng(event.latitude!, event.longitude!);
     }
 
-    // Otherwise, use country center as fallback
     if (event.country != Country.unspecified) {
       return _countryCoordinates[event.country];
     }
@@ -123,7 +120,6 @@ class GeocodingHelper {
     return null;
   }
 
-  /// Build a location query string from filter components
   static String buildLocationQuery({
     String? city,
     String? province,
@@ -138,29 +134,23 @@ class GeocodingHelper {
     return parts.join(', ');
   }
 
-  /// Check if event matches location filters
   static bool eventMatchesLocation(
     Event event, {
     String? countryFilter,
     String? cityFilter,
     String? provinceFilter,
   }) {
-    // Country filter
     if (countryFilter != null && countryFilter.isNotEmpty) {
       final eventCountry = event.country.name.toLowerCase();
       if (!eventCountry.contains(countryFilter.toLowerCase())) {
         return false;
       }
     }
-
-    // City filter
     if (cityFilter != null && cityFilter.isNotEmpty) {
       if (!event.townCity.toLowerCase().contains(cityFilter.toLowerCase())) {
         return false;
       }
     }
-
-    // Province filter
     if (provinceFilter != null && provinceFilter.isNotEmpty) {
       if (!event.stateProvince.toLowerCase().contains(provinceFilter.toLowerCase())) {
         return false;
@@ -170,7 +160,6 @@ class GeocodingHelper {
     return true;
   }
 
-  /// Check if event is within distance from a point
   static bool eventWithinDistance(
     Event event,
     LatLng centerPoint,
@@ -189,7 +178,6 @@ class GeocodingHelper {
     return distance <= radiusKm;
   }
 
-  /// Calculate distance between two points using Haversine formula
   static double _calculateDistance(
     double lat1,
     double lon1,

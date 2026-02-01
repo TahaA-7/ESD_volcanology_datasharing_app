@@ -19,13 +19,12 @@ class EventStorage {
 
   static Future<List<Event>> loadEvents() async {
     try {
-      // Load user events
+      // laat de events van een user zien
       final userEvents = await _loadUserEvents();
       
-      // Load mock events
+      // events uit de mock data
       final mockEvents = await _loadMockEvents();
-      
-      // Combine both lists
+    
       return [...mockEvents, ...userEvents];
     } catch (e) {
       print('Error loading events: $e');
@@ -52,7 +51,6 @@ class EventStorage {
 
   static Future<List<Event>> _loadMockEvents() async {
     try {      
-      // Load mock events
       final mockJsonList = await MockDataUpdater.loadEvents();
       return _parseEventsList(mockJsonList);
     } catch (e) {

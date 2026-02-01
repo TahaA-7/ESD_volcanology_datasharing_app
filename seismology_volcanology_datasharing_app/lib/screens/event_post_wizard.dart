@@ -401,7 +401,6 @@ class _UploadStep extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: () {
             try {
-              // TODO: Implement media picker
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Not implemented (yet)')),
               );

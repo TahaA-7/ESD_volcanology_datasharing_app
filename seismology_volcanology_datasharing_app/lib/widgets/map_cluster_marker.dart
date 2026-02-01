@@ -35,7 +35,6 @@ class _MapClusterMarkerState extends State<MapClusterMarker> {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Outer halo
                 Container(
                   width: size + 30,
                   height: size + 30,
@@ -48,7 +47,6 @@ class _MapClusterMarkerState extends State<MapClusterMarker> {
                   ),
                 ),
                 
-                // Middle halo
                 Container(
                   width: size + 15,
                   height: size + 15,
@@ -62,7 +60,6 @@ class _MapClusterMarkerState extends State<MapClusterMarker> {
                   ),
                 ),
                 
-                // Core with star
                 Container(
                   width: size,
                   height: size,
@@ -88,7 +85,6 @@ class _MapClusterMarkerState extends State<MapClusterMarker> {
                   ),
                 ),
                 
-                // Event count badge
                 Positioned(
                   right: 0,
                   top: 0,
@@ -118,7 +114,6 @@ class _MapClusterMarkerState extends State<MapClusterMarker> {
             ),
           ),
           
-          // Tooltip on hover
           if (_isHovered)
             Positioned(
               bottom: size / 2 + 25,

@@ -72,7 +72,7 @@ class SelectionResultsPanel extends StatelessWidget {
             ),
           ),
           
-          // Events list
+          // lijst met events 
           Expanded(
             child: events.isEmpty
                 ? const Center(
@@ -94,7 +94,6 @@ class SelectionResultsPanel extends StatelessWidget {
                   ),
           ),
           
-          // Bottom action bar
           _buildBottomBar(context),
         ],
       ),
@@ -122,7 +121,7 @@ class SelectionResultsPanel extends StatelessWidget {
               ),
             ),
           ),
-          // Minimize button
+          // kleiner maken
           if (onMinimize != null)
             IconButton(
               icon: const Icon(Icons.minimize, size: 20),
@@ -132,7 +131,7 @@ class SelectionResultsPanel extends StatelessWidget {
               tooltip: 'Minimize',
             ),
           const SizedBox(width: 8),
-          // Close button
+          // close knop
           IconButton(
             icon: const Icon(Icons.close, size: 20),
             onPressed: onClose,
@@ -155,7 +154,6 @@ class SelectionResultsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Event header
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -189,7 +187,7 @@ class SelectionResultsPanel extends StatelessWidget {
             ),
           ),
           
-          // Event details
+          // details van events
           Padding(
             padding: const EdgeInsets.all(8),
             child: Column(
@@ -217,7 +215,6 @@ class SelectionResultsPanel extends StatelessWidget {
                 
                 const SizedBox(height: 8),
                 
-                // More details button
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -339,7 +336,6 @@ class SelectionResultsPanel extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
-              // TODO: Implement action
             },
             borderRadius: BorderRadius.circular(4),
             child: Padding(

@@ -109,7 +109,6 @@ class _MapLegendState extends State<MapLegend> {
 
   @override
   Widget build(BuildContext context) {
-    // Minimized button only
     if (_isMinimized) {
       return Positioned(
         bottom: 16,
@@ -163,7 +162,6 @@ class _MapLegendState extends State<MapLegend> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -188,7 +186,6 @@ class _MapLegendState extends State<MapLegend> {
                       ),
                     ),
                   ),
-                  // Collapse/Expand button
                   InkWell(
                     onTap: () {
                       setState(() {
@@ -206,7 +203,6 @@ class _MapLegendState extends State<MapLegend> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  // Minimize button
                   InkWell(
                     onTap: () {
                       setState(() {
@@ -227,7 +223,6 @@ class _MapLegendState extends State<MapLegend> {
               ),
             ),
             
-            // Scrollable event types (max 4 visible)
             if (_isExpanded)
               Flexible(
                 child: Stack(
@@ -243,7 +238,6 @@ class _MapLegendState extends State<MapLegend> {
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           child: Column(
                             children: [
-                              // All event types
                               ...EventType.values.map((type) => _LegendItem(
                                 icon: _getEventIcon(type),
                                 color: _getEventColor(type),
@@ -254,7 +248,6 @@ class _MapLegendState extends State<MapLegend> {
                               const Divider(height: 1),
                               const SizedBox(height: 4),
                               
-                              // Cluster
                               const _LegendItem(
                                 icon: Icons.star,
                                 color: Colors.blueGrey,
@@ -267,7 +260,6 @@ class _MapLegendState extends State<MapLegend> {
                       ),
                     ),
                     
-                    // Scroll indicators
                     Positioned(
                       top: 4,
                       right: 4,
@@ -339,7 +331,6 @@ class _LegendItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          // Icon
           Icon(
             icon,
             size: 16,
@@ -347,7 +338,6 @@ class _LegendItem extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           
-          // Color circle (not for cluster)
           if (!isCluster)
             Container(
               width: 10,
@@ -362,7 +352,6 @@ class _LegendItem extends StatelessWidget {
               ),
             ),
           
-          // Star for cluster
           if (isCluster)
             Icon(
               Icons.star,
@@ -371,8 +360,7 @@ class _LegendItem extends StatelessWidget {
             ),
           
           const SizedBox(width: 6),
-          
-          // Label
+
           Expanded(
             child: Text(
               label,

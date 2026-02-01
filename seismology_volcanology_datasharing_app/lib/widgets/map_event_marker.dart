@@ -124,7 +124,6 @@ class _MapEventMarkerState extends State<MapEventMarker> {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Outer halo (duration-based)
                 Container(
                   width: haloSize,
                   height: haloSize,
@@ -137,7 +136,6 @@ class _MapEventMarkerState extends State<MapEventMarker> {
                   ),
                 ),
                 
-                // Inner halo
                 Container(
                   width: haloSize * 0.6,
                   height: haloSize * 0.6,
@@ -150,8 +148,7 @@ class _MapEventMarkerState extends State<MapEventMarker> {
                     ),
                   ),
                 ),
-                
-                // Core marker
+ 
                 Container(
                   width: 32,
                   height: 32,
@@ -180,7 +177,6 @@ class _MapEventMarkerState extends State<MapEventMarker> {
             ),
           ),
           
-          // Tooltip on hover
           if (_isHovered)
             Positioned(
               bottom: haloSize / 2 + 10,
