@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/event_post_model.dart';
+import '../screens/eventlist_detail.dart';
+
 
 enum EventListView { grid, list }
 
@@ -276,9 +280,10 @@ class _EventListWidgetState extends State<EventListWidget> {
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+            children: [ 
               TextButton(
                 onPressed: () {},
+
                 child: const Text(
                   'More details (click)',
                   style: TextStyle(fontSize: 12),

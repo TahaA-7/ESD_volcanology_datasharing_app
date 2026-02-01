@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 
+
 class FilterBar extends StatefulWidget {
   final Function(DateTime?, DateTime?)? onTimeRangeChanged;
   final Function(String)? onQuickTimeSelected;
+
   
   const FilterBar({
     super.key,
     this.onTimeRangeChanged,
     this.onQuickTimeSelected,
+    this.onLocationFiltersChanged,
+    this.onEventTypeFiltersChanged,
+    this.onEventPosted,
+
   });
 
   @override
@@ -22,22 +28,8 @@ class _FilterBarState extends State<FilterBar> {
   DateTime? _toDate;
   double _timeAdjusterValue = 0.5;
   
-  // Event type filters
-  final Map<String, bool> _eventTypes = {
-    'seismic / tectonic': true,
-    'volcanic (eruptive / surface-process)': true,
-    'volcanic (non-eruptive)': true,
-    'mass movement / surface instability': true,
-    'cryoseismic / glacial': false,
-    'hydro-meteorological / fluid-related': false,
-    'atmospheric / coupled signals': false,
-    'anthropogenic': false,
-    'geodetic / deformation': false,
-    'multi-sensor': false,
-    'unspecified / anomalous': false,
-    'false / test': false,
-    'all on/off': false,
-  };
+  // Event type filters - Map EventType enum to bool
+  late Map<EventType, bool> _eventTypeFilters;
   
   // Geospatial categories
   final Map<String, bool> _geospatialCategories = {
@@ -54,6 +46,15 @@ class _FilterBarState extends State<FilterBar> {
   final TextEditingController _gpsDistanceController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Initialize all event types as enabled by default
+    _eventTypeFilters = {
+      for (var type in EventType.values) type: true,
+    };
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _countryController.dispose();
@@ -64,6 +65,8 @@ class _FilterBarState extends State<FilterBar> {
     _gpsDistanceController.dispose();
     super.dispose();
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +160,7 @@ class _FilterBarState extends State<FilterBar> {
                 flex: 2,
                 child: _timeFiltersSection(),
               ),
+<<<<<<< Updated upstream
 
               _verticalDivider(),
 
@@ -608,10 +612,34 @@ class _FilterBarState extends State<FilterBar> {
         ),
         const SizedBox(height: 12),
         
+        // All on/off toggle
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: Checkbox(
+                value: _eventTypeFilters.values.every((v) => v),
+                tristate: true,
+                onChanged: (value) {
+                  _toggleAllEventTypes(value ?? true);
+                },
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Text('all on/off', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        
+        const SizedBox(height: 8),
+        
+        // Individual event types
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _eventTypes.entries.map((entry) {
+          children: EventType.values.map((type) {
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -619,17 +647,18 @@ class _FilterBarState extends State<FilterBar> {
                   width: 18,
                   height: 18,
                   child: Checkbox(
-                    value: entry.value,
+                    value: _eventTypeFilters[type] ?? true,
                     onChanged: (value) {
                       setState(() {
-                        _eventTypes[entry.key] = value ?? false;
+                        _eventTypeFilters[type] = value ?? false;
                       });
+                      _notifyEventTypeFiltersChanged();
                     },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
                 const SizedBox(width: 4),
-                Text(entry.key, style: const TextStyle(fontSize: 10)),
+                Text(_getEventTypeLabel(type), style: const TextStyle(fontSize: 10)),
                 const SizedBox(width: 2),
                 const Icon(Icons.info_outline, size: 12),
               ],
@@ -842,11 +871,19 @@ class _FilterBarState extends State<FilterBar> {
       _distanceController.clear();
       _gpsDistanceController.clear();
       
-      _eventTypes.updateAll((key, value) => key == 'seismic / tectonic' || 
-                                             key == 'volcanic (eruptive / surface-process)' ||
-                                             key == 'volcanic (non-eruptive)' ||
-                                             key == 'mass movement / surface instability');
+      // Reset all event types to enabled
+      _eventTypeFilters.updateAll((key, value) => true);
       _geospatialCategories.updateAll((key, value) => true);
     });
+    widget.onTimeRangeChanged?.call(null, null);
+    widget.onQuickTimeSelected?.call(null);
+    widget.onLocationFiltersChanged?.call(
+      country: null,
+      city: null,
+      province: null,
+      latitude: null,
+      longitude: null,
+    );
+    _notifyEventTypeFiltersChanged();
   }
 }

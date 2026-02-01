@@ -3,6 +3,15 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../widgets/legend.dart';
 
+import '../widgets/map_event_marker.dart';
+import '../widgets/map_cluster_marker.dart';
+import '../widgets/event_details_dialog.dart';
+import '../widgets/selection_results.dart';
+import '../models/event_post_model.dart';
+import '../utils_services/event_storage.dart';
+import '../utils_services/event_cluster.dart'; 
+
+
 /// Map layers enum
 enum MapLayer {
   standard,
@@ -42,7 +51,7 @@ extension MapLayerExtension on MapLayer {
   }
 }
 
-/// Main map screen
+/// Selection model
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -55,6 +64,226 @@ class _MapScreenState extends State<MapScreen> {
   double _currentZoom = 2.0;
   MapLayer _selectedLayer = MapLayer.standard;
 
+  // Events
+  List<Event> _events = [];
+  bool _isLoading = true;
+
+  // Selection state
+  bool _selectionMode = false;
+  Offset? _selectionStart;
+  Offset? _selectionEnd;
+  SelectionBounds? _selectedBounds;
+  List<Event> _selectedEvents = [];
+  bool _showSelectionResults = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  @override
+  void didUpdateWidget(MapScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.events != null) {
+      setState(() {
+        _events = widget.events!;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadEvents() async {
+    if (widget.events != null) {
+      setState(() {
+        _events = widget.events!;
+        _isLoading = false;
+      });
+    } else {
+      final events = await EventStorage.loadEvents();
+      setState(() {
+        _events = events;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _startSelection(Offset position) {
+    if (_selectionMode) {
+      setState(() {
+        _selectionStart = position;
+        _selectionEnd = position;
+        _selectedBounds = null;
+        _showSelectionResults = false;
+      });
+    }
+  }
+
+  void _updateSelection(Offset position) {
+    if (_selectionMode && _selectionStart != null) {
+      setState(() {
+        _selectionEnd = position;
+      });
+    }
+  }
+
+  void _endSelection() {
+    if (_selectionMode && _selectionStart != null && _selectionEnd != null) {
+      final dx = (_selectionStart!.dx - _selectionEnd!.dx).abs();
+      final dy = (_selectionStart!.dy - _selectionEnd!.dy).abs();
+      
+      if (dx > 20 || dy > 20) {
+        final camera = _mapController.camera;
+        final bounds = camera.visibleBounds;
+        final size = camera.size;
+        
+        final lat1 = bounds.north - (_selectionStart!.dy / size.height) * (bounds.north - bounds.south);
+        final lng1 = bounds.west + (_selectionStart!.dx / size.width) * (bounds.east - bounds.west);
+        
+        final lat2 = bounds.north - (_selectionEnd!.dy / size.height) * (bounds.north - bounds.south);
+        final lng2 = bounds.west + (_selectionEnd!.dx / size.width) * (bounds.east - bounds.west);
+        
+        final point1 = LatLng(lat1, lng1);
+        final point2 = LatLng(lat2, lng2);
+
+        final north = point1.latitude > point2.latitude ? point1.latitude : point2.latitude;
+        final south = point1.latitude < point2.latitude ? point1.latitude : point2.latitude;
+        final east = point1.longitude > point2.longitude ? point1.longitude : point2.longitude;
+        final west = point1.longitude < point2.longitude ? point1.longitude : point2.longitude;
+
+        setState(() {
+          _selectedBounds = SelectionBounds(
+            LatLng(north, east),
+            LatLng(south, west),
+          );
+        });
+
+        _onSelectionComplete(_selectedBounds!);
+      }
+      
+      setState(() {
+        _selectionStart = null;
+        _selectionEnd = null;
+      });
+    }
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedBounds = null;
+      _selectionStart = null;
+      _selectionEnd = null;
+      _selectedEvents = [];
+      _showSelectionResults = false;
+    });
+  }
+
+  void _onSelectionComplete(SelectionBounds bounds) {
+    // Find all events within the selected bounds
+    final eventsInBounds = _events.where((event) {
+      if (event.latitude == null || event.longitude == null) return false;
+      final point = LatLng(event.latitude!, event.longitude!);
+      return bounds.contains(point);
+    }).toList();
+
+    setState(() {
+      _selectedEvents = eventsInBounds;
+      _showSelectionResults = true;
+    });
+
+    print('Selection complete: ${eventsInBounds.length} events found');
+  }
+
+  Rect? _getSelectionRect() {
+    if (_selectionStart == null || _selectionEnd == null) return null;
+
+    final left = _selectionStart!.dx < _selectionEnd!.dx
+        ? _selectionStart!.dx
+        : _selectionEnd!.dx;
+    final top = _selectionStart!.dy < _selectionEnd!.dy
+        ? _selectionStart!.dy
+        : _selectionEnd!.dy;
+    final width = (_selectionStart!.dx - _selectionEnd!.dx).abs();
+    final height = (_selectionStart!.dy - _selectionEnd!.dy).abs();
+
+    return Rect.fromLTWH(left, top, width, height);
+  }
+
+  List<LatLng> _getBoundsPolygon() {
+    if (_selectedBounds == null) return [];
+
+    return [
+      LatLng(_selectedBounds!.northEast.latitude, _selectedBounds!.southWest.longitude),
+      _selectedBounds!.northEast,
+      LatLng(_selectedBounds!.southWest.latitude, _selectedBounds!.northEast.longitude),
+      _selectedBounds!.southWest,
+    ];
+  }
+
+  double _calculateHaloSize(Event event) {
+    // halo size 
+    final duration = event.duration;
+    
+    if (duration.inDays > 7) return 100.0;
+    if (duration.inDays > 3) return 80.0;
+    if (duration.inDays > 1) return 65.0;
+    if (duration.inHours > 12) return 55.0;
+    if (duration.inHours > 6) return 50.0;
+    if (duration.inHours > 1) return 45.0;
+    
+    return 40.0; // Minimum size
+  }
+
+  List<Marker> _buildEventMarkers() {
+    // Cluster events based on zoom level
+    final clusters = EventClusterManager.clusterEvents(_events, _currentZoom);
+
+    return clusters.map((cluster) {
+      if (cluster.isCluster) {
+        // Multiple events - show cluster marker
+        return Marker(
+          point: cluster.center,
+          width: 80,
+          height: 80,
+          child: MapClusterMarker(
+            cluster: cluster,
+            onTap: () {
+              // Zoom in to cluster location
+              _mapController.move(
+                cluster.center,
+                _currentZoom + 2,
+              );
+            },
+          ),
+        );
+      } else {
+        // Single event - show regular marker with halo
+        final event = cluster.events.first;
+        final haloSize = _calculateHaloSize(event);
+        
+        return Marker(
+          point: cluster.center,
+          width: haloSize,
+          height: haloSize,
+          child: MapEventMarker(
+            data: EventMarkerData(
+              event: event,
+              position: cluster.center,
+              haloSize: haloSize,
+            ),
+            onTap: () => _showEventDetails(event),
+          ),
+        );
+      }
+    }).toList();
+  }
+
+  void _showEventDetails(Event event) {
+    showDialog(
+      context: context,
+      builder: (context) => EventDetailsDialog(event: event),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -79,7 +308,109 @@ class _MapScreenState extends State<MapScreen> {
         ),
         const MapLegend(),
 
-        /// Layer selector button (top right)
+
+        // Selection Results Panel
+        if (_showSelectionResults && _selectedBounds != null)
+          Positioned(
+            right: 100,
+            top: 100,
+            child: SelectionResultsPanel(
+              events: _selectedEvents,
+              onClose: () {
+                setState(() {
+                  _showSelectionResults = false;
+                });
+              },
+              onMinimize: () {
+                setState(() {
+                  _showSelectionResults = false;
+                });
+              },
+            ),
+          ),
+
+        Positioned(
+          top: 16,
+          left: 16,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectionMode = !_selectionMode;
+                      if (!_selectionMode) {
+                        _selectionStart = null;
+                        _selectionEnd = null;
+                      }
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _selectionMode
+                          ? Colors.blue.shade100
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.crop_free,
+                          color: _selectionMode
+                              ? Colors.blue
+                              : Colors.black87,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _selectionMode
+                              ? 'Selection Mode (ON)'
+                              : 'Selection Mode',
+                          style: TextStyle(
+                            color: _selectionMode
+                                ? Colors.blue
+                                : Colors.black87,
+                            fontWeight: _selectionMode ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (_selectedBounds != null) ...[
+                const SizedBox(height: 8),
+                Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: _clearSelection,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.close, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Clear Selection'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
         Positioned(
           top: 16,
           right: 16,

@@ -20,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   DateTime? _filterToDate;
   String? _quickTimeFilter;
 
+
   void _handleTimeRangeChanged(DateTime? fromDate, DateTime? toDate) {
     setState(() {
       _filterFromDate = fromDate;
@@ -35,6 +36,7 @@ class _HomePageState extends State<HomePage> {
       _filterToDate = null;
     });
   }
+
 
   Widget _buildContent() {
     switch (selectedTab) {
@@ -65,6 +67,7 @@ class _HomePageState extends State<HomePage> {
       },
       onTimeRangeChanged: _handleTimeRangeChanged,
       onQuickTimeSelected: _handleQuickTimeSelected,
+
       child: Container(
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
